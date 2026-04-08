@@ -1,0 +1,11 @@
+import { app } from "./app";
+import { env } from "./config/env";
+import { logger } from "./utils/logger";
+
+async function main() {
+    app.listen(env.PORT, () => {
+        logger.info(`Server running on port ${env.PORT}`);
+    });
+}
+
+main();

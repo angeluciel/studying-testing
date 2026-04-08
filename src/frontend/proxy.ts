@@ -1,4 +1,4 @@
-import { MiddlewareConfig, NextRequest, NextResponse } from "next/server";
+import { ProxyConfig, NextRequest, NextResponse } from "next/server";
 
 // COOKIE MOCK — how cookies work in Next.js middleware
 
@@ -61,7 +61,7 @@ async function verifyJwt(token: string): Promise<Record<string, unknown> | null>
     }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
     const publicRoute = publicRoutes.find((r) => r.path === pathname) as PublicRoute | undefined;
     const tokenCookie = request.cookies.get("token");
@@ -86,7 +86,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
 }
 
-export const config: MiddlewareConfig = {
+export const config: ProxyConfig = {
     matcher: [
         "/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
     ],

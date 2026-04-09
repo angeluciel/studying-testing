@@ -1,5 +1,8 @@
 import { pool } from "../../db/pool";
 import { hashPassword } from "../../utils/password";
+import { sendMailWithTemplate } from "../../utils/mail";
+import { WelcomeEmail } from "../../emails/WelcomeEmail";
+import { env } from "../../config/env";
 
 type CreateUserInput = {
     email: string;
@@ -25,7 +28,20 @@ export async function createUser(input: CreateUserInput) {
         ]
     );
 
-    return result.rows[0];
+    const user = result.rows[0];
+
+    await sendMailWithTemplate(
+        user.email,
+        "Welcome — your account is ready",
+        WelcomeEmail({
+            name: user.name,
+            email: user.email,
+            tempPassword: input.password,
+            loginUrl: `${env.APP_BASE_URL}/login`,
+        })
+    );
+
+    return user;
 }
 
 export async function getMe(userId: string) {

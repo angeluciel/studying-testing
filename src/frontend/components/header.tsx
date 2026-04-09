@@ -6,13 +6,18 @@ type HeaderProps = {
   showBtn?: boolean
 }
 
-export default function PublicHeader({ redirect = "/login", text = "Login", showBtn = true }: HeaderProps) {
+export default function PublicHeader({ redirect = "/login", text = "Login", showBtn = true }: Readonly<HeaderProps>) {
   return (
-    <header className="flex min-h-14  w-full justify-center sm:justify-between items-center font-semibold px-8 border-b border-zinc-800">
-      <h1 className="text-lg md:text-base">branduv + lucielmoe</h1>
-      { showBtn &&
-        (<Link href={redirect} className="hidden sm:flex px-4 py-2 rounded-sm bg-teal-400 text-background">{text}</Link>)
-      }
+    <header className="flex min-h-14 w-full justify-between items-center px-6 border-b border-border bg-background">
+      <h1 className="text-sm font-semibold tracking-tight">branduv + lucielmoe</h1>
+      {showBtn && (
+        <Link
+          href={redirect}
+          className="hidden sm:flex px-4 py-1.5 rounded-lg bg-outline text-background text-sm font-medium hover:bg-outline/90 transition-colors duration-150"
+        >
+          {text}
+        </Link>
+      )}
     </header>
   )
 }

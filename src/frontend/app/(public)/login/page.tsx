@@ -1,11 +1,7 @@
-"use client"
 import PublicHeader from "@/components/header";
 import Link from "next/link";
-import { useState } from "react";
 
 export default function Login() {
-  const [step, setStep] = useState<"email"|"name">("email");
-
   
 
   return (

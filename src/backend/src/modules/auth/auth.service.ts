@@ -2,7 +2,8 @@ import { pool } from "../../db/pool";
 import { comparePassword, hashPassword } from "../../utils/password";
 import { signAccessToken } from "../../utils/jwt";
 import { generateRawToken, hashToken } from "../../utils/tokens";
-import { sendMail } from "../../utils/mail";
+import { sendMailWithTemplate } from "../../utils/mail";
+import { PasswordResetEmail } from "../../emails/PasswordResetEmail";
 import { env } from "../../config/env";
 import { AppError } from "../../middlewares/error.middleware";
 
@@ -32,7 +33,7 @@ export async function login(email: string, password: string) {
 
 export async function requestPasswordChange(email: string) {
     const result = await pool.query(
-        `select id, email from public.users where email = $1`,
+        `select id, email, name from public.users where email = $1`,
         [email.toLowerCase()]
     );
 
@@ -49,14 +50,12 @@ export async function requestPasswordChange(email: string) {
         [user.id, tokenHash]
     );
 
-    const link = `${env.APP_BASE_URL}/reset-password?token=${rawToken}`;
+    const resetLink = `${env.APP_BASE_URL}/reset-password?token=${rawToken}`;
 
-    await sendMail(
+    await sendMailWithTemplate(
         user.email,
-        "Change your password",
-        `<p>Click the link below to change your password:</p>
-        <p><a href="${link}">${link}</a></p>
-        <p>This link expires in 30 minutes.</p>`
+        "Reset your password",
+        PasswordResetEmail({ name: user.name, resetLink })
     );
 }
 

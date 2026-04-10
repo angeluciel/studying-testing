@@ -14,6 +14,8 @@ app.get("/health", (_req, res) => {
     res.json({ ok: true });
 });
 
+// TODO: ADD TRY/CATCH TO EVERY SERVICE
+
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
 

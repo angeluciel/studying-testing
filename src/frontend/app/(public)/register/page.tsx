@@ -5,9 +5,43 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 
+type FormData = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+  name: string;
+  surname: string;
+}
+
 export default function Register() {
   const [step, setStep] = useState<'email' | 'name'>('email');
   const [role, setRole] = useState<'admin' | 'user' | null>(null);
+
+  const [formData, setFormData] = useState<FormData>({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    name: '',
+    surname: '',
+  });
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }
+
+  async function handleSubmit() {
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await response.json();
+    } catch(err) {
+      console.log(err);
+    }
+  }
 
   const ddSelected = useRef<HTMLInputElement | null>(null);
 
@@ -91,7 +125,9 @@ export default function Register() {
                 transition={{ duration: 0.2 }}
               >
                 <div className='flex flex-col gap-1'>
+                  <button type='button' onClick={() => setStep('email')} className='p-2 rounded-lg hover:bg-background w-fit transition-all duration-150 -translate-x-2.5'>
                   <ArrowLeft />
+                  </button>
                   <h1 className='text-2xl font-semibold'>Please fill in your data</h1>
                   <p className='text-lg text-muted'>We&apos;re still missing some information</p>
                 </div>
@@ -105,9 +141,9 @@ export default function Register() {
                     />
                   </label>
                   <label className='flex flex-col gap-1.5'>
-                    <span className=' font-medium'>Name</span>
+                    <span className=' font-medium'>Surname</span>
                     <input
-                      placeholder='Your name'
+                      placeholder='Your Surname'
                       type='text'
                       className='py-3 px-3 rounded-lg border border-border-input bg-background text-foreground placeholder:text-muted  transition-colors duration-150'
                     />

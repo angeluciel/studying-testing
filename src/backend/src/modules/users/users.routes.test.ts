@@ -14,7 +14,11 @@ describe("GET /health", () => {
 
 describe("GET /users/me", () => {
 
-    it("returns")
+    it("returns 401 unauthorized", async () => {
+        const response = await request(app).get("/users/me")
+
+        expect (response.status).toBe(401);
+    })
 })
 
 // TODO: create a test database

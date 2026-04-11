@@ -1,6 +1,7 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { z } from "zod";
 import * as usersService from "./users.service";
+import { AppError } from "../../middlewares/error.middleware";
 
 const createUserSchema = z.object({
     email: z.email(),
@@ -18,27 +19,45 @@ const updateMeSchema = z.object({
 export async function createUser(req: Request, res: Response) {
     const body = createUserSchema.parse(req.body);
     const user = await usersService.createUser(body);
-    return res.status (201).json(user);
+    return res.status(201).json(user);
 }
 
-export async function getMe(req: Request, res: Response) {
-    const user = await usersService.getMe(req.user!.id);
-    return res.json(user);;
-}
+export async function getMe(req: Request, res: Response, next: NextFunction) {
+    try {
+        const user = await usersService.getMe(req.user!.id);
 
-export async function updateMe(req: Request, res: Response) {
-    const body = updateMeSchema.parse(req.body);
-    const user = await usersService.updateMe(req.user!.id, body);
-    return res.json(user);
-}
+        if (!user) {
+            return next(new AppError(404, "User not found"));
+        }
 
-export async function deleteUser(req: Request<{ id: string }>, res: Response) {
-    const targetUserId = req.params.id;
-
-    if (req.user!.role !== "admin" && req.user!.id !== targetUserId) {
-        return res.status(403).json({ message: "Forbidden" });
+        return res.json(user);
+    } catch (err) {
+        next(err);
     }
+}
 
-    await usersService.deleteUser(targetUserId);
-    return res.status(204).send();
+export async function updateMe(req: Request, res: Response, next: NextFunction) {
+    try {
+        const body = updateMeSchema.parse(req.body);
+        const user = await usersService.updateMe(req.user!.id, body);
+        return res.json(user);
+    } catch (err) {
+        next(err);
+    }
+}
+
+export async function deleteUser(req: Request<{ id: string }>, res: Response, next: NextFunction) {
+    try {
+        const targetUserId = req.params.id;
+
+        if (req.user!.role !== "admin" && req.user!.id !== targetUserId) {
+            return next(new AppError(403, "Forbidden"));
+        }
+
+        await usersService.deleteUser(targetUserId);
+
+        return res.status(204).send();
+    } catch (err) {
+        next(err);
+    }
 }

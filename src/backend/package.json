@@ -10,7 +10,9 @@
     "test": "cross-env NODE_ENV=test vitest run",
     "test:watch": "cross-env NODE_ENV=test vitest",
     "test:coverage": "cross-env NODE_ENV=test vitest run --coverage",
-    "seed": "tsx src/db/seed.ts"
+    "seed": "tsx src/db/seed.ts",
+    "migrate": "NODE_ENV=development tsx src/db/migrate.ts",
+    "migrate:test": "cross-env NODE_ENV=test tsx src/db/migrate.ts"
   },
   "keywords": [],
   "author": "",

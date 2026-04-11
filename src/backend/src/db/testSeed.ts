@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { env } from "../config/env";
 import { pool } from "./pool";
 
@@ -21,10 +22,12 @@ export async function resetDb() {
 }
 
 export async function seedTestAdmin() {
+    const password_hash = await bcrypt.hash("password", 10);
     await pool.query(
         `
-        INSERT INTO users (email, name, surname, password, role)
-        VALUES ('admin@test.com', 'test', 'Admin', 'password', 'admin')
-        `
-    )
+        INSERT INTO users (email, name, surname, password_hash, role)
+        VALUES ('admin@test.com', 'test', 'Admin', $1, 'admin')
+        `,
+        [password_hash]
+    );
 }

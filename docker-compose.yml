@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: testdb
+    ports:
+      - "5432:5432"
+  
+  mail:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025" # SMTP port
+      - "8025:8025" # web UI

@@ -4,4 +4,4 @@ dist/
 
 # env files
 .env*
-!.env.example
+!.env.test

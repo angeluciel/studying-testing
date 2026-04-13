@@ -1,17 +1,19 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-    test: {
-        globals: true,
-        environment: 'node',
-        include: ['**/*.{test,spec}.ts'],
+  test: {
+    silent: 'passed-only',
 
-        globalSetup: "./src/modules/globalSetup.ts",
+    globals: true,
+    environment: 'node',
+    include: ['**/*.{test,spec}.ts'],
 
-        setupFiles: ["./src/modules/setup.ts"],
-        coverage: {
-            provider: 'v8'
-        },
-        testTimeout: 30000,
-    }
-})
+    globalSetup: './src/modules/globalSetup.ts',
+
+    setupFiles: ['./src/modules/setup.ts'],
+    coverage: {
+      provider: 'v8',
+    },
+    testTimeout: 30000,
+  },
+});

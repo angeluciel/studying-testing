@@ -3,6 +3,7 @@ import { hashPassword } from "../../utils/password";
 import { sendMailWithTemplate } from "../../utils/mail";
 import { WelcomeEmail } from "../../emails/WelcomeEmail";
 import { env } from "../../config/env";
+import { UserRow } from "../../types/user";
 
 type CreateUserInput = {
     email: string;
@@ -15,7 +16,7 @@ type CreateUserInput = {
 export async function createUser(input: CreateUserInput) {
     const passwordhash = await hashPassword(input.password);
 
-    const result = await pool.query(
+    const result = await pool.query<UserRow>(
         `insert into public.users (email, name, surname, password_hash, role)
         values ($1, $2, $3, $4, $5)
         returning id, email, name, surname, role, email_confirmed, is_active, created_at`,

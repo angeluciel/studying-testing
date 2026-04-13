@@ -1,7 +1,26 @@
+# Dependencies
+node_modules/
+
 # compiled output
 dist/
 *.tsbuildinfo
 
 # env files
 .env*
-!.env.example
+!.env.test
+
+# Testing
+coverage/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# pnpm
+.pnpm-store/

@@ -1,22 +1,23 @@
 import { pool } from "./pool";
 import { createUser } from "../modules/users/users.service";
 import { env } from "../config/env";
+import { UserRow } from "../types/user";
 
-export async function seedAdminUser() {
+export async function seedAdminUser(): Promise<UserRow> {
     const existing = await pool.query(
         `SELECT id FROM users WHERE email = $1 LIMIT 1`,
         ["admin@example.com"]
     );
 
     if (existing.rows.length > 0) {
-        return;
+        return existing.rows[0];
     }
 
     if (!env.TEMP_PASSWORD) {
         throw new Error("TEMP_PASSWORD must exist")
     }
 
-    await createUser({
+    const user = await createUser({
         email: "admin@example.com",
         name: "Main",
         surname: "Admin",
@@ -25,4 +26,6 @@ export async function seedAdminUser() {
     });
 
     console.log("Initial admin user created successfully.")
+
+    return user;
 }

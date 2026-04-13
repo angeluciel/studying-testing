@@ -1,36 +1,26 @@
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 import { Pool } from "pg";
-import { runMigrations } from "./migrate";
-import { logger } from "../utils/logger";
+import { runMigrations } from "../migrate";
+import { logger } from "../../utils/logger";
 
 let postgresContainer: StartedPostgreSqlContainer | null = null;
 let testPool: Pool | null = null;
 
-/**
- * Start a fresh Postgre container for testing
- * This runs once per test SESSION
- */
-
-export async function startTestContainer(): Promise<{
+export async function startPostgresContainer(): Promise<{
     container: StartedPostgreSqlContainer;
     pool: Pool;
 }> {
     if (postgresContainer && testPool) {
-        return {
-            container: postgresContainer,
-            pool: testPool,
-        };
+        return { container: postgresContainer, pool: testPool };
     }
 
     logger.info("Starting PostgreSQL test container...");
 
-    postgresContainer = await new PostgreSqlContainer('postgres:17')
-        .withDatabase('testdb')
-        .withUsername('postgres')
-        .withPassword('postgres')
+    postgresContainer = await new PostgreSqlContainer("postgres:17")
+        .withDatabase("testdb")
+        .withUsername("postgres")
+        .withPassword("postgres")
         .start();
-    
-    logger.info("Postgres container started.");
 
     testPool = new Pool({
         connectionString: postgresContainer.getConnectionUri(),
@@ -41,13 +31,10 @@ export async function startTestContainer(): Promise<{
 
     await runMigrations(testPool);
 
-    return {
-        container: postgresContainer,
-        pool: testPool,
-    };
+    return { container: postgresContainer, pool: testPool };
 }
 
-export async function stopTestContainer(): Promise<void> {
+export async function stopPostgresContainer(): Promise<void> {
     if (testPool) {
         await testPool.end();
         testPool = null;
@@ -59,9 +46,6 @@ export async function stopTestContainer(): Promise<void> {
     }
 }
 
-/**
- * Get the test pool for a single test
- */
 export function getTestPool(): Pool {
     if (!testPool) {
         throw new Error(
@@ -72,13 +56,9 @@ export function getTestPool(): Pool {
     return testPool;
 }
 
-/**
- * Reset database between tests (truncate all tables)
- */
-
 export async function resetTestDatabase(): Promise<void> {
     const pool = getTestPool();
-    
+
     try {
         const result = await pool.query(`
             SELECT tablename FROM pg_tables
@@ -95,10 +75,10 @@ export async function resetTestDatabase(): Promise<void> {
 
         if (truncateQuery) {
             await pool.query(truncateQuery);
-            logger.debug(`Database reset, ${tables.length} tables truncated.`)
+            logger.debug(`Database reset, ${tables.length} tables truncated.`);
         }
     } catch (err) {
-        logger.error(`Faield to reset test database: ${err}`);
+        logger.error(`Failed to reset test database: ${err}`);
         throw err;
     }
 }

@@ -21,4 +21,3 @@ describe("GET /users/me", () => {
     })
 })
 
-// TODO: create a test database

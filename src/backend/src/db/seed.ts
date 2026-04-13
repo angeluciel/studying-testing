@@ -3,13 +3,12 @@ import { createUser } from "../modules/users/users.service";
 import { env } from "../config/env";
 
 export async function seedAdminUser() {
-    const adminCheck = await pool.query(
-        `SELECT id FROM users WHERE role = $1 LIMIT 1`,
-        ["admin"]
+    const existing = await pool.query(
+        `SELECT id FROM users WHERE email = $1 LIMIT 1`,
+        ["admin@example.com"]
     );
 
-    if (adminCheck.rows.length > 0) {
-        console.log("Admin user already exists, skipping seed.");
+    if (existing.rows.length > 0) {
         return;
     }
 
@@ -27,14 +26,3 @@ export async function seedAdminUser() {
 
     console.log("Initial admin user created successfully.")
 }
-
-seedAdminUser()
-    .then(async () => {
-        await pool.end();
-        process.exit(0);
-    })
-    .catch(async (error) => {
-        console.log("Seed failed: ", error);
-        await pool.end();
-        process.exit(1);
-    });

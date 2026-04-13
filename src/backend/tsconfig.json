@@ -8,7 +8,8 @@
         "strict": true,
         "skipLibCheck": true,
         "esModuleInterop": true,
-        "jsx": "react-jsx"
+        "jsx": "react-jsx",
+        "types": ["node", "vitest/globals"]
     },
     "include": ["src"]
 }

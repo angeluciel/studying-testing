@@ -1,7 +1,8 @@
 import dotenv from "dotenv";
-import { number } from "zod";
+import { z } from "zod";
 
-dotenv.config();
+const envFile = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
+dotenv.config({ path: envFile });
 
 function required(name: string): string {
     const value = process.env[name];
@@ -10,12 +11,13 @@ function required(name: string): string {
 }
 
 export const env = {
+    NODE_ENV: process.env.NODE_ENV ?? "development",
     PORT: Number(process.env.PORT ?? 3000),
     DATABASE_URL: required("DATABASE_URL"),
     JWT_SECRET: required("JWT_SECRET"),
     APP_BASE_URL: required("APP_BASE_URL"),
     SMTP_HOST: required("SMTP_HOST"),
-    SMTP_PORT: number(required("SMTP_PORT")),
+    SMTP_PORT: z.coerce.number().parse(required("SMTP_PORT")),
     SMTP_USER: required("SMTP_USER"),
     SMTP_PASS: required("SMTP_PASS"),
     MAIL_FROM: required("MAIL_FROM"),

@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { z } from "zod";
 
 const envFile = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
-dotenv.config({ path: envFile });
+dotenv.config({ path: envFile, quiet: true });
 
 function required(name: string): string {
     const value = process.env[name];

@@ -76,7 +76,7 @@ export default function Register() {
                   <button
                     type='button'
                     onClick={handleNextStep}
-                    className='w-full h-10 rounded-lg bg-outline text-background font-medium  cursor-pointer hover:bg-outline/90 transition-colors duration-150 mt-2'
+                    className='w-full py-3 rounded-lg bg-outline text-background font-medium  cursor-pointer hover:bg-outline/90 transition-colors duration-150 mt-2'
                   >
                     Next Step
                   </button>
@@ -137,8 +137,8 @@ export default function Register() {
                   </label>
                   <button
                     type='button'
-                    onClick={() => console.log('send data')}
-                    className='w-full h-10 rounded-lg bg-outline text-background font-medium  cursor-pointer hover:bg-outline/90 transition-colors duration-150 mt-2'
+                    onClick={handleSubmit}
+                    className='w-full py-3 rounded-lg bg-outline text-background font-medium  cursor-pointer hover:bg-outline/90 transition-colors duration-150 mt-2'
                   >
                     Create Account
                   </button>

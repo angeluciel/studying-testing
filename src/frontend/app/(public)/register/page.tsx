@@ -4,69 +4,21 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
-
-type FormData = {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  name: string;
-  surname: string;
-};
+import { useRegisterForm } from '@/hooks/register';
 
 export default function Register() {
-  const [step, setStep] = useState<'email' | 'name'>('email');
-  const [role, setRole] = useState<'admin' | 'user' | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const [formData, setFormData] = useState<FormData>({
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: '',
-    surname: '',
-  });
-
-  const validateEmail = (): { ok: boolean; message: string | null } => {
-    const { email, password, confirmPassword } = formData;
-
-    if (!email || !password || !confirmPassword)
-      return { ok: false, message: 'All fields must be filled.' };
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return { ok: false, message: 'Email is invalid.' };
-    if (password.length < 8)
-      return { ok: false, message: 'Password must be at least 8 characters.' };
-    if (password !== confirmPassword) return { ok: false, message: 'Passwords do not match.' };
-
-    return { ok: true, message: null };
-  };
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  }
-
-  async function handleSubmit() {
-    try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const data = await response.json();
-    } catch (err) {
-      console.log(err);
-    }
-  }
+  const { step, setStep, error, formData, handleChange, handleNextStep, handleSubmit } =
+    useRegisterForm();
 
   const ddSelected = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
+  /* useEffect(() => {
     if (role) {
       requestAnimationFrame(() => {
         ddSelected.current?.focus();
       });
     }
-  });
+  }); */
 
   return (
     <div className='flex flex-col flex-1 bg-background text-foreground font-sans'>
@@ -123,11 +75,7 @@ export default function Register() {
                   </label>
                   <button
                     type='button'
-                    onClick={() => {
-                      const { ok, message } = validateEmail();
-                      setError(message);
-                      if (ok) setStep('name');
-                    }}
+                    onClick={handleNextStep}
                     className='w-full h-10 rounded-lg bg-outline text-background font-medium  cursor-pointer hover:bg-outline/90 transition-colors duration-150 mt-2'
                   >
                     Next Step

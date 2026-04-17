@@ -90,7 +90,22 @@ describe('POST /users', () => {
   it('created role=user even if role is admin', async () => {});
 
   // TEST EMAIL
-  it('returns 400 when email is missing', async () => {});
+  it('returns 400 when email is MISSING (no field)', async () => {
+    const result = await request(app).post('/users').send({
+      name: 'teste',
+      surname: 'testando',
+      password: '1234567890abcdefghijklmnopqrstuvwxyz',
+    });
+
+    expect(result.status).toBe(400);
+    expect(result.body).toMatchObject({
+      issues: {
+        fieldErrors: {
+          email: ['Invalid Email'],
+        },
+      },
+    });
+  });
   it('returns 409 if email already exists', async () => {
     await createUser({
       email: 'test@example.com',

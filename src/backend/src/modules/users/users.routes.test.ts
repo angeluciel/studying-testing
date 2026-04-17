@@ -7,6 +7,7 @@ import { createUser } from './users.service';
 import { Body } from '@react-email/components';
 import * as usersService from './users.service';
 import { signAccessToken } from '../../utils/jwt';
+import { UserRow } from '../../types/user';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
@@ -61,10 +62,10 @@ describe('GET /users/me', () => {
       email: 'deleted@example.com',
     });
 
-    const result = await request(app).get('/users/me').auth(token, { type: `bearer` });
+    const response = await request(app).get('/users/me').auth(token, { type: `bearer` });
 
-    expect(result.status).toBe(404);
-    expect(result.body).toMatchObject({ message: 'User not found' });
+    expect(response.status).toBe(404);
+    expect(response.body).toMatchObject({ message: 'User not found' });
 
     spy.mockRestore();
   });
@@ -114,14 +115,14 @@ describe('POST /users', () => {
 
   // TEST EMAIL
   it('returns 400 when email is MISSING (no field)', async () => {
-    const result = await request(app).post('/users').send({
+    const response = await request(app).post('/users').send({
       name: 'teste',
       surname: 'testando',
       password: '1234567890abcdefghijklmnopqrstuvwxyz',
     });
 
-    expect(result.status).toBe(400);
-    expect(result.body).toMatchObject({
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject({
       issues: {
         fieldErrors: {
           email: ['Email is required.'],
@@ -130,15 +131,15 @@ describe('POST /users', () => {
     });
   });
   it('returns 400 when email is BLANK (field "")', async () => {
-    const result = await request(app).post('/users').send({
+    const response = await request(app).post('/users').send({
       email: '',
       name: 'teste',
       surname: 'testando',
       password: '1234567890abcdefghijklmnopqrstuvwxyz',
     });
 
-    expect(result.status).toBe(400);
-    expect(result.body).toMatchObject({
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject({
       issues: {
         fieldErrors: {
           email: ['Email is required.'],
@@ -168,15 +169,15 @@ describe('POST /users', () => {
     expect(sendMailWithTemplate).not.toHaveBeenCalled();
   });
   it('returns 400 when email format is invalid', async () => {
-    const result = await request(app).post('/users').send({
+    const response = await request(app).post('/users').send({
       email: 'testandoErrorTop',
       name: 'teste',
       surname: 'testando',
       password: '1234567890abcdefghijklmnopqrstuvwxyz',
     });
 
-    expect(result.status).toBe(400);
-    expect(result.body).toMatchObject({
+    expect(response.status).toBe(400);
+    expect(response.body).toMatchObject({
       issues: {
         fieldErrors: {
           email: ['Invalid email.'],
@@ -200,12 +201,47 @@ describe('POST /users', () => {
     [{ name: 'x', surname: 'x', password: '...' }, 'email', 'Email is required.'],
     [{ email: '', name: 'x', surname: 'x', password: '...' }, 'email', 'Email is required.'],
   ])('returns 400 for invalid field - %j', async (body, field, message?) => {
-    const result = await request(app).post('/users').send(body);
-    expect(result.status).toBe(400);
-    expect(result.body.issues.fieldErrors).toHaveProperty(field);
+    const response = await request(app).post('/users').send(body);
+    expect(response.status).toBe(400);
+    expect(response.body.issues.fieldErrors).toHaveProperty(field);
 
     if (message) {
-      expect(result.body.issues.fieldErrors[field]).toContain(message);
+      expect(response.body.issues.fieldErrors[field]).toContain(message);
     }
   });
+});
+
+/**
+ * Validate:
+ *  return 401 if no token
+ *  return 401 if trying to update password
+ *  return 400 if name = blank
+ *  return 400 if surname if blank
+ *  return 400 if both fields are missing from the body
+ *  return 200 with updated user when name is changed
+ *  return 200 with updated user when surname is changed
+ *  return 200 with updates user when both are changed
+ *  return 200 and keeps original name when only surname is provided
+ *  return 200 and keeps original surname when only name is provided
+ */
+
+describe('PATCH /users/me', async () => {
+  it('return 401 if no token', async () => {
+    const response = await request(app).patch('/users/me');
+
+    expect(response.status).toBe(401);
+    expect(response.body).toMatchObject({
+      message: 'Invalid Token.',
+    });
+  });
+
+  /* 
+  let user: UserRow;
+  beforeAll(async () => {
+    ({ user } = await createAuthenticatedUser('user'));
+    return user;
+  })
+
+  it.each([[{ email: user.name, name: 'x', surname: 'y' }]]);
+ */
 });

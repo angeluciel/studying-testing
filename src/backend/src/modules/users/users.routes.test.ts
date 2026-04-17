@@ -1,9 +1,14 @@
 import request from 'supertest';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { app } from '../../app';
 import { createAuthenticatedUser } from '../../tests/helpers/auth';
 import { signAccessToken } from '../../utils/jwt';
 import { UserRow } from '../../types/user';
+import { sendMailWithTemplate } from '../../utils/mail';
+
+vi.mock('../../emails/WelcomeEmail', () => ({
+  sendMailWithTemplate: vi.fn(),
+}));
 
 describe('GET /health', () => {
   it('returns 200 with ok: true', async () => {
@@ -51,3 +56,34 @@ describe('GET /users/me', () => {
  *  if email valid, should succeed and return user data
  *
  */
+describe('POST /users', () => {
+  it('returns 201 and creates a user with normalized email', async () => {
+    const response = await request(app).post('/users').send({
+      email: 'TESTE@EXAMPLE.com',
+      name: 'teste',
+      surname: 'testando',
+      password: '1234567890abcdefghijklmnopqrstuvwxyz',
+    });
+
+    expect(response.status).toBe(201);
+    expect(sendMailWithTemplate).toHaveBeenCalledTimes(1);
+    expect(sendMailWithTemplate).toHaveBeenCalledWith(
+      'teste@example.com',
+      'Welcome — your account is ready',
+      expect.any(String),
+    );
+    expect(response.body.email).toBe('teste@example.com');
+    expect(response.body).toMatchObject({
+      id: expect.any(String),
+      email: 'teste@example.com',
+      name: 'teste',
+      surname: 'testando',
+      role: 'user',
+      email_confirmed: false,
+      is_active: expect.any(Boolean),
+      created_at: expect.any(String),
+    });
+    expect(response.body.password).toBeUndefined();
+    expect(response.body.password_hash).toBeUndefined();
+  });
+});

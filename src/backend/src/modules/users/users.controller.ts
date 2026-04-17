@@ -12,12 +12,12 @@ const createUserSchema = z.object({
     .pipe(z.email({ error: 'Invalid email.' })),
   name: z
     .string({
-      error: (issue) => (issue.input === undefined ? 'Name is required.' : 'Invalid name.'),
+      error: (issue) => (issue.input === undefined ? 'Name is missing.' : 'Invalid name.'),
     })
     .min(1, { error: 'Name is required.' }),
   surname: z
     .string({
-      error: (issue) => (issue.input === undefined ? 'Surname is required.' : 'Invalid surname.'),
+      error: (issue) => (issue.input === undefined ? 'Surname is missing.' : 'Invalid surname.'),
     })
     .min(1, { error: 'Surname is required.' }),
   password: z

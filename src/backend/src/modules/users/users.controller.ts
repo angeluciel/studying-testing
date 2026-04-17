@@ -53,6 +53,7 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
 
     return res.json(user);
   } catch (err) {
+    //TODO: test 57 downards
     next(err);
   }
 }

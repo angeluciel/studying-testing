@@ -99,6 +99,8 @@ describe('POST /users', () => {
       password: '1234567890abcdefghijklmnopqrstuvwxyz',
     });
 
+    vi.clearAllMocks();
+
     const response = await request(app).post('/users').send({
       email: 'test@example.com',
       name: 'second',

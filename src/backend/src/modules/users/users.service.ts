@@ -4,6 +4,8 @@ import { sendMailWithTemplate } from '../../utils/mail';
 import { WelcomeEmail } from '../../emails/WelcomeEmail';
 import { env } from '../../config/env';
 import { UserRow } from '../../types/user';
+import { AppError } from '../../middlewares/error.middleware';
+import { DatabaseError } from 'pg';
 
 type CreateUserInput = {
   email: string;
@@ -16,27 +18,37 @@ type CreateUserInput = {
 export async function createUser(input: CreateUserInput) {
   const passwordhash = await hashPassword(input.password);
 
-  const result = await pool.query<UserRow>(
-    `insert into public.users (email, name, surname, password_hash, role)
+  try {
+    const result = await pool.query<UserRow>(
+      `insert into public.users (email, name, surname, password_hash, role)
         values ($1, $2, $3, $4, $5)
         returning id, email, name, surname, role, email_confirmed, is_active, created_at`,
-    [input.email.toLowerCase(), input.name, input.surname, passwordhash, 'user'],
-  );
+      [input.email.toLowerCase(), input.name, input.surname, passwordhash, 'user'],
+    );
+    const user = result.rows[0];
 
-  const user = result.rows[0];
+    await sendMailWithTemplate(
+      user.email,
+      'Welcome — your account is ready',
+      WelcomeEmail({
+        name: user.name,
+        email: user.email,
+        tempPassword: input.password,
+        loginUrl: `${env.APP_BASE_URL}/login`,
+      }),
+    );
 
-  await sendMailWithTemplate(
-    user.email,
-    'Welcome — your account is ready',
-    WelcomeEmail({
-      name: user.name,
-      email: user.email,
-      tempPassword: input.password,
-      loginUrl: `${env.APP_BASE_URL}/login`,
-    }),
-  );
+    return user;
+  } catch (err: unknown) {
+    if (err instanceof DatabaseError && err.code === '23505') {
+      throw new AppError(409, 'Email already exists.');
+    }
+    if (err instanceof AppError) {
+      throw err;
+    }
 
-  return user;
+    throw new AppError(500, 'An unexpected error occurred.');
+  }
 }
 
 export async function getMe(userId: string) {

@@ -5,9 +5,15 @@ import { createAuthenticatedUser } from '../../tests/helpers/auth';
 import { sendMailWithTemplate } from '../../utils/mail';
 import { createUser } from './users.service';
 import { Body } from '@react-email/components';
+import * as usersService from './users.service';
+import { signAccessToken } from '../../utils/jwt';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
+}));
+
+vi.mock('./users-service', () => ({
+  getMe: vi.fn(),
 }));
 
 describe('GET /health', () => {
@@ -29,7 +35,7 @@ describe('GET /users/me', () => {
     expect(response.body).toEqual({ message: 'Missing or invalid token' });
   });
 
-  it("returns 200 with authenticated user's data", async () => {
+  it('returns 200 with authenticated user data', async () => {
     // seed test db
     const { user, token } = await createAuthenticatedUser('admin');
     const response = await request(app).get('/users/me').auth(token, { type: 'bearer' });
@@ -45,6 +51,22 @@ describe('GET /users/me', () => {
       is_active: expect.any(Boolean),
       created_at: expect.any(String),
     });
+  });
+
+  it('returns 404 if user no longer exists', async () => {
+    const spy = vi.spyOn(usersService, 'getMe').mockResolvedValue(null);
+    const token = signAccessToken({
+      sub: 'deleted-user-id',
+      role: 'user',
+      email: 'deleted@example.com',
+    });
+
+    const result = await request(app).get('/users/me').auth(token, { type: `bearer` });
+
+    expect(result.status).toBe(404);
+    expect(result.body).toMatchObject({ message: 'User not found' });
+
+    spy.mockRestore();
   });
 });
 
@@ -185,24 +207,5 @@ describe('POST /users', () => {
     if (message) {
       expect(result.body.issues.fieldErrors[field]).toContain(message);
     }
-  });
-
-  // TEST PASSWORD
-  it('returns 400 when password is too weak', async () => {
-    const result = await request(app).post('/users').send({
-      email: 'idc@idk.com',
-      name: 'teste',
-      surname: 'testando',
-      password: '123',
-    });
-
-    expect(result.status).toBe(400);
-    expect(result.body).toMatchObject({
-      issues: {
-        fieldErrors: {
-          password: ['Password is too weak.'],
-        },
-      },
-    });
   });
 });

@@ -1,15 +1,37 @@
 services:
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: testdb
+  proxy:
+    image: nginx:alpine
+    volumes:
+      - ./docker/proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/ssl/certs/cert.pem:/etc/nginx/ssl/cert.pem:ro
+      - /etc/ssl/private/key.pem:/etc/nginx/ssl/key.pem:ro
     ports:
-      - "5432:5432"
-  
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile
+    env_file: ./src/backend/.env
+    expose:
+      - "8080"
+    depends_on:
+      - mail
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+
   mail:
     image: axllent/mailpit
+    expose:
+      - "1025"
     ports:
-      - "1025:1025" # SMTP port
       - "8025:8025" # web UI

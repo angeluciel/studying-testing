@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { describe, it, expect } from 'vitest';
 import { app } from '../../app';
-import { seedAdminUser } from '../../db/seed';
+import { createAuthenticatedUser } from '../../tests/helpers/auth';
 import { signAccessToken } from '../../utils/jwt';
 import { UserRow } from '../../types/user';
 
@@ -14,6 +14,9 @@ describe('GET /health', () => {
   });
 });
 
+/**
+ * Either fail because user is unathorized or pass with authorization
+ */
 describe('GET /users/me', () => {
   it('returns 401 unauthorized', async () => {
     const response = await request(app).get('/users/me');
@@ -23,12 +26,7 @@ describe('GET /users/me', () => {
 
   it("returns 200 with authenticated user's data", async () => {
     // seed test db
-    const user: UserRow = await seedAdminUser();
-    const token = signAccessToken({
-      sub: user.id,
-      role: user.role,
-      email: user.email,
-    });
+    const { user, token } = await createAuthenticatedUser('admin');
     const response = await request(app).get('/users/me').auth(token, { type: 'bearer' });
 
     expect(response.status).toBe(200);
@@ -44,3 +42,12 @@ describe('GET /users/me', () => {
     });
   });
 });
+
+/**
+ * Validate:
+ *  if duplicate email, should error and return that
+ *  if email invalid, should error and return that
+ *  if weak password, should error and return that
+ *  if email valid, should succeed and return user data
+ *
+ */

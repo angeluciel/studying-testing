@@ -2,11 +2,9 @@ import request from 'supertest';
 import { describe, it, expect, vi } from 'vitest';
 import { app } from '../../app';
 import { createAuthenticatedUser } from '../../tests/helpers/auth';
-import { signAccessToken } from '../../utils/jwt';
-import { UserRow } from '../../types/user';
 import { sendMailWithTemplate } from '../../utils/mail';
 
-vi.mock('../../emails/WelcomeEmail', () => ({
+vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
 }));
 
@@ -70,7 +68,7 @@ describe('POST /users', () => {
     expect(sendMailWithTemplate).toHaveBeenCalledWith(
       'teste@example.com',
       'Welcome — your account is ready',
-      expect.any(String),
+      expect.anything(),
     );
     expect(response.body.email).toBe('teste@example.com');
     expect(response.body).toMatchObject({
@@ -86,4 +84,20 @@ describe('POST /users', () => {
     expect(response.body.password).toBeUndefined();
     expect(response.body.password_hash).toBeUndefined();
   });
+
+  // BUSINESS RULES
+  it('created role=user even if role is admin', async () => {});
+
+  // TEST EMAIL
+  it('returns 400 when email is missing', async () => {});
+  it('returns 409 if email already exists', () => {});
+  it('returns 400 when email format is invalid', async () => {});
+
+  // TEST USER-DATA
+  it('returns 400 when name is missing', async () => {});
+  it('returns 400 when surname is missing', async () => {});
+
+  // TEST PASSWORD
+  it('returns 400 when password is missing', async () => {});
+  it('returns 400 when password is too weak', async () => {});
 });

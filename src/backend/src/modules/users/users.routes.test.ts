@@ -50,8 +50,8 @@ describe('GET /users/me', () => {
 /**
  * Validate:
  *  if duplicate email, should error and return that
- *  if email invalid, should error and return that
- *  if weak password, should error and return that
+ *  if email invalid, should error and return invalid
+ *  if weak password, should error and return weak password
  *  if email valid, should succeed and return user data
  *
  */
@@ -101,7 +101,24 @@ describe('POST /users', () => {
     expect(result.body).toMatchObject({
       issues: {
         fieldErrors: {
-          email: ['Invalid Email'],
+          email: ['Email is required.'],
+        },
+      },
+    });
+  });
+  it('returns 400 when email is BLANK (field "")', async () => {
+    const result = await request(app).post('/users').send({
+      email: '',
+      name: 'teste',
+      surname: 'testando',
+      password: '1234567890abcdefghijklmnopqrstuvwxyz',
+    });
+
+    expect(result.status).toBe(400);
+    expect(result.body).toMatchObject({
+      issues: {
+        fieldErrors: {
+          email: ['Email is required.'],
         },
       },
     });
@@ -127,13 +144,91 @@ describe('POST /users', () => {
     expect(response.body).toMatchObject({ message: 'Email already exists.' });
     expect(sendMailWithTemplate).not.toHaveBeenCalled();
   });
-  it('returns 400 when email format is invalid', async () => {});
+  it('returns 400 when email format is invalid', async () => {
+    const result = await request(app).post('/users').send({
+      email: 'testandoErrorTop',
+      name: 'teste',
+      surname: 'testando',
+      password: '1234567890abcdefghijklmnopqrstuvwxyz',
+    });
+
+    expect(result.status).toBe(400);
+    expect(result.body).toMatchObject({
+      issues: {
+        fieldErrors: {
+          email: ['Invalid email.'],
+        },
+      },
+    });
+  });
 
   // TEST USER-DATA
-  it('returns 400 when name is missing', async () => {});
-  it('returns 400 when surname is missing', async () => {});
+  it('returns 400 when name is missing', async () => {
+    const result = await request(app).post('/users').send({
+      email: 'example@idk.com',
+      name: '',
+      surname: 'testando',
+      password: '1234567890abcdefghijklmnopqrstuvwxyz',
+    });
+
+    expect(result.status).toBe(400);
+    expect(result.body).toMatchObject({
+      issues: {
+        fieldErrors: {
+          name: ['Name is required.'],
+        },
+      },
+    });
+  });
+  it('returns 400 when surname is missing', async () => {
+    const result = await request(app).post('/users').send({
+      email: 'idc@idk.com',
+      name: 'teste',
+      password: '1234567890abcdefghijklmnopqrstuvwxyz',
+    });
+
+    expect(result.status).toBe(400);
+    expect(result.body).toMatchObject({
+      issues: {
+        fieldErrors: {
+          surname: ['Surname is required.'],
+        },
+      },
+    });
+  });
 
   // TEST PASSWORD
-  it('returns 400 when password is missing', async () => {});
-  it('returns 400 when password is too weak', async () => {});
+  it('returns 400 when password is missing', async () => {
+    const result = await request(app).post('/users').send({
+      email: 'idk@idc.com',
+      name: 'teste',
+      surname: 'testando',
+    });
+
+    expect(result.status).toBe(400);
+    expect(result.body).toMatchObject({
+      issues: {
+        fieldErrors: {
+          password: ['Password is missing.'],
+        },
+      },
+    });
+  });
+  it('returns 400 when password is too weak', async () => {
+    const result = await request(app).post('/users').send({
+      email: 'idc@idk.com',
+      name: 'teste',
+      surname: 'testando',
+      password: '123',
+    });
+
+    expect(result.status).toBe(400);
+    expect(result.body).toMatchObject({
+      issues: {
+        fieldErrors: {
+          password: ['Password is too weak.'],
+        },
+      },
+    });
+  });
 });

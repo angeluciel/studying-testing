@@ -9,10 +9,22 @@ const createUserSchema = z.object({
       error: (issue) => (issue.input === undefined ? 'Email is required.' : 'Invalid input.'),
     })
     .min(1, { error: 'Email is required.' })
-    .pipe(z.email({ error: 'Invalid email' })),
-  name: z.string().min(1),
-  surname: z.string().min(1),
-  password: z.string().min(8),
+    .pipe(z.email({ error: 'Invalid email.' })),
+  name: z
+    .string({
+      error: (issue) => (issue.input === undefined ? 'Name is required.' : 'Invalid name.'),
+    })
+    .min(1, { error: 'Name is required.' }),
+  surname: z
+    .string({
+      error: (issue) => (issue.input === undefined ? 'Surname is required.' : 'Invalid surname.'),
+    })
+    .min(1, { error: 'Surname is required.' }),
+  password: z
+    .string({
+      error: (issue) => (issue.input === undefined ? 'Password is missing.' : 'Invalid password.'),
+    })
+    .min(8, { error: 'Password is too weak.' }),
   role: z.enum(['admin', 'user']).optional(),
 });
 

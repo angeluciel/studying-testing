@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { app } from '../../app';
 import { createAuthenticatedUser } from '../../tests/helpers/auth';
 import { sendMailWithTemplate } from '../../utils/mail';
+import { createUser } from './users.service';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
@@ -90,7 +91,25 @@ describe('POST /users', () => {
 
   // TEST EMAIL
   it('returns 400 when email is missing', async () => {});
-  it('returns 409 if email already exists', () => {});
+  it('returns 409 if email already exists', async () => {
+    await createUser({
+      email: 'test@example.com',
+      name: 'first',
+      surname: 'user',
+      password: '1234567890abcdefghijklmnopqrstuvwxyz',
+    });
+
+    const response = await request(app).post('/users').send({
+      email: 'test@example.com',
+      name: 'second',
+      surname: 'user',
+      password: '1234567890abcdefghijklmnopqrstuvwxyz',
+    });
+
+    expect(response.status).toBe(409);
+    expect(response.body).toMatchObject({ message: 'Email already exists.' });
+    expect(sendMailWithTemplate).not.toHaveBeenCalled();
+  });
   it('returns 400 when email format is invalid', async () => {});
 
   // TEST USER-DATA

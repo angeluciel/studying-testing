@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     silent: 'passed-only',
+    reporters: 'verbose',
 
     globals: true,
     environment: 'node',

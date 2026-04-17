@@ -225,23 +225,53 @@ describe('POST /users', () => {
  *  return 200 and keeps original surname when only name is provided
  */
 
+/*
+
+  const result = await request(app)
+    .post('/books')
+    .send(bodies[scenario])
+    .auth(token, { type: 'bearer' });
+
+  expect(result.status).toBe(400);
+});
+
+*/
+
 describe('PATCH /users/me', async () => {
   it('return 401 if no token', async () => {
     const response = await request(app).patch('/users/me');
 
     expect(response.status).toBe(401);
     expect(response.body).toMatchObject({
-      message: 'Invalid Token.',
+      message: 'Missing or invalid token.',
     });
   });
 
-  /* 
   let user: UserRow;
   beforeAll(async () => {
     ({ user } = await createAuthenticatedUser('user'));
     return user;
   })
 
-  it.each([[{ email: user.name, name: 'x', surname: 'y' }]]);
- */
+  it.each([
+    ['blank name'],
+    ['blank surname'],
+    ['both blank'],
+    ['both missing']
+  ])('returns 400 when %s', async (scenario) => {
+    const bodies: Record<string, object> = {
+      'blank name': { name: '', surname:'x' },
+      'blank surname': { name: 'x', surname: '' },
+      'both blank': { name: '', surname: '' },
+      'both missing': {}
+    };
+    const { token } = await createAuthenticatedUser('user');
+    const result = await request(app)
+      .patch('/users/me')
+      .send(bodies[scenario])
+      .auth(token, { type: 'bearer' });
+
+    expect(result.status).toBe(400);
+
+  })
 });

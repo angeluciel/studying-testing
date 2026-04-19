@@ -225,25 +225,13 @@ describe('POST /users', () => {
  *  return 200 and keeps original surname when only name is provided
  */
 
-/*
-
-  const result = await request(app)
-    .post('/books')
-    .send(bodies[scenario])
-    .auth(token, { type: 'bearer' });
-
-  expect(result.status).toBe(400);
-});
-
-*/
-
 describe('PATCH /users/me', async () => {
   it('return 401 if no token', async () => {
     const response = await request(app).patch('/users/me');
 
     expect(response.status).toBe(401);
     expect(response.body).toMatchObject({
-      message: 'Missing or invalid token.',
+      message: 'Missing or invalid token',
     });
   });
 
@@ -272,6 +260,6 @@ describe('PATCH /users/me', async () => {
       .auth(token, { type: 'bearer' });
 
     expect(result.status).toBe(400);
-
   })
+
 });

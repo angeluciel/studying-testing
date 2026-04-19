@@ -28,14 +28,16 @@ const createUserSchema = z.object({
   role: z.enum(['admin', 'user']).optional(),
 });
 
-const updateMeSchema = z
-  .object({
-      name: z   
-    .string({
-      error: (issue) => (issue.input === undefined ? 'Name is missing.' : 'Invalid name.'),
-    }),
-  surname: z.string().min(1).optional(),
-});
+const updateMeSchema = z.object({
+  name: z.string().min(1, 'Name is required.').optional(),
+  surname: z.string().min(1, 'Surname is required.').optional(),
+}).superRefine((data, ctx) => {
+  ctx.addIssue({
+    code: "custom",
+    message: "At least one of 'name' or 'surname' must be provided.",
+    path: ["name"],
+  })
+})
 
 export async function createUser(req: Request, res: Response, next: NextFunction) {
   try {

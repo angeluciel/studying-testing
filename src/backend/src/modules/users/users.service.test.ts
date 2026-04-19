@@ -1,3 +1,4 @@
+import { describe } from 'vitest';
 /**
  * PATCH
  * throw if user is not found
@@ -6,3 +7,7 @@
  * update both when both provided
  * return updated user row
  */
+
+describe("users service", () => {
+    it.todo('placeholder')
+})

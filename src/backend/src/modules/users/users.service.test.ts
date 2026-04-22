@@ -10,4 +10,4 @@ import { describe } from 'vitest';
 
 describe("users service", () => {
     it.todo('placeholder')
-})
+});

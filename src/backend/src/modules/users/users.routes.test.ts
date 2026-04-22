@@ -110,104 +110,80 @@ describe('POST /users', () => {
     expect(response.body.password_hash).toBeUndefined();
   });
 
-  // BUSINESS RULES
-  it('created role=user even if role is admin', async () => {});
+  describe('business rules', () => {
+    it.todo('creates role=user even if role=admin is sent', async () => {});
+  });
 
   // TEST EMAIL
-  it('returns 400 when email is MISSING (no field)', async () => {
-    const response = await request(app).post('/users').send({
-      name: 'teste',
-      surname: 'testando',
-      password: '1234567890abcdefghijklmnopqrstuvwxyz',
-    });
+  describe('email validation', () => {
+    it('returns 409 if email already exists', async () => {
+      await createUser({
+        email: 'test@example.com',
+        name: 'first',
+        surname: 'user',
+        password: '1234567890abcdefghijklmnopqrstuvwxyz',
+      });
 
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject({
-      issues: {
-        fieldErrors: {
-          email: ['Email is required.'],
+      vi.clearAllMocks();
+
+      const response = await request(app).post('/users').send({
+        email: 'test@example.com',
+        name: 'second',
+        surname: 'user',
+        password: '1234567890abcdefghijklmnopqrstuvwxyz',
+      });
+
+      expect(response.status).toBe(409);
+      expect(response.body).toMatchObject({ message: 'Email already exists.' });
+      expect(sendMailWithTemplate).not.toHaveBeenCalled();
+    });
+    it('returns 400 when email format is invalid', async () => {
+      const response = await request(app).post('/users').send({
+        email: 'testandoErrorTop',
+        name: 'teste',
+        surname: 'testando',
+        password: '1234567890abcdefghijklmnopqrstuvwxyz',
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toMatchObject({
+        issues: {
+          fieldErrors: {
+            email: ['Invalid email.'],
+          },
         },
-      },
-    });
-  });
-  it('returns 400 when email is BLANK (field "")', async () => {
-    const response = await request(app).post('/users').send({
-      email: '',
-      name: 'teste',
-      surname: 'testando',
-      password: '1234567890abcdefghijklmnopqrstuvwxyz',
-    });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject({
-      issues: {
-        fieldErrors: {
-          email: ['Email is required.'],
-        },
-      },
-    });
-  });
-  it('returns 409 if email already exists', async () => {
-    await createUser({
-      email: 'test@example.com',
-      name: 'first',
-      surname: 'user',
-      password: '1234567890abcdefghijklmnopqrstuvwxyz',
-    });
-
-    vi.clearAllMocks();
-
-    const response = await request(app).post('/users').send({
-      email: 'test@example.com',
-      name: 'second',
-      surname: 'user',
-      password: '1234567890abcdefghijklmnopqrstuvwxyz',
-    });
-
-    expect(response.status).toBe(409);
-    expect(response.body).toMatchObject({ message: 'Email already exists.' });
-    expect(sendMailWithTemplate).not.toHaveBeenCalled();
-  });
-  it('returns 400 when email format is invalid', async () => {
-    const response = await request(app).post('/users').send({
-      email: 'testandoErrorTop',
-      name: 'teste',
-      surname: 'testando',
-      password: '1234567890abcdefghijklmnopqrstuvwxyz',
-    });
-
-    expect(response.status).toBe(400);
-    expect(response.body).toMatchObject({
-      issues: {
-        fieldErrors: {
-          email: ['Invalid email.'],
-        },
-      },
+      });
     });
   });
 
-  // TEST USER-DATA
-  it.each([
-    [{ email: 'a@b.com', surname: 'x', password: '...' }, 'name'],
-    [{ email: 'a@b.com', name: '', surname: 'x', password: '...' }, 'name'],
-    [{ email: 'a@b.com', name: 'x', password: '...' }, 'surname'],
-    [{ email: 'a@b.com', name: 'x', surname: '', password: '...' }, 'surname'],
-    [{ email: 'a@b.com', name: 'x', surname: 'x' }, 'password', 'Password is missing.'],
-    [
-      { email: 'a@b.com', name: 'x', surname: 'x', password: 'abc' },
-      'password',
-      'Password is too weak.',
-    ],
-    [{ name: 'x', surname: 'x', password: '...' }, 'email', 'Email is required.'],
-    [{ email: '', name: 'x', surname: 'x', password: '...' }, 'email', 'Email is required.'],
-  ])('returns 400 for invalid field - %j', async (body, field, message?) => {
-    const response = await request(app).post('/users').send(body);
-    expect(response.status).toBe(400);
-    expect(response.body.issues.fieldErrors).toHaveProperty(field);
+  describe('field validation', () => {
+    it.each([
+      [{ email: 'a@b.com', surname: 'x', password: '...' }, 'name'],
+      [{ email: 'a@b.com', name: '', surname: 'x', password: '...' }, 'name'],
+      [{ email: 'a@b.com', name: 'x', password: '...' }, 'surname'],
+      [{ email: 'a@b.com', name: 'x', surname: '', password: '...' }, 'surname'],
+      [{ email: 'a@b.com', name: 'x', surname: 'x' }, 'password', 'Password is missing.'],
+      [
+        { email: 'a@b.com', name: 'x', surname: 'x', password: 'abc' },
+        'password',
+        'Password is too weak.',
+      ],
+      [{ name: 'x', surname: 'x', password: '...' }, 'email', 'Email is required.'],
+      [{ email: '', name: 'x', surname: 'x', password: '...' }, 'email', 'Email is required.'],
+    ])('returns 400 for invalid field - %j', async (body, field, message?) => {
+      const response = await request(app).post('/users').send(body);
+      expect(response.status).toBe(400);
+      expect(response.body.issues.fieldErrors).toHaveProperty(field);
 
-    if (message) {
-      expect(response.body.issues.fieldErrors[field]).toContain(message);
-    }
+      if (message) {
+        expect(response.body.issues.fieldErrors[field]).toContain(message);
+      }
+    });
+  });
+
+  describe('error handling', () => {
+    it('re-throws AppError as-is', async () => {});
+    it('wraps unexpected errors in a 500 AppError', async () => {});
   });
 });
 
@@ -239,27 +215,24 @@ describe('PATCH /users/me', async () => {
   beforeAll(async () => {
     ({ user } = await createAuthenticatedUser('user'));
     return user;
-  })
+  });
 
-  it.each([
-    ['blank name'],
-    ['blank surname'],
-    ['both blank'],
-    ['both missing']
-  ])('returns 400 when %s', async (scenario) => {
-    const bodies: Record<string, object> = {
-      'blank name': { name: '', surname:'x' },
-      'blank surname': { name: 'x', surname: '' },
-      'both blank': { name: '', surname: '' },
-      'both missing': {}
-    };
-    const { token } = await createAuthenticatedUser('user');
-    const result = await request(app)
-      .patch('/users/me')
-      .send(bodies[scenario])
-      .auth(token, { type: 'bearer' });
+  it.each([['blank name'], ['blank surname'], ['both blank'], ['both missing']])(
+    'returns 400 when %s',
+    async (scenario) => {
+      const bodies: Record<string, object> = {
+        'blank name': { name: '', surname: 'x' },
+        'blank surname': { name: 'x', surname: '' },
+        'both blank': { name: '', surname: '' },
+        'both missing': {},
+      };
+      const { token } = await createAuthenticatedUser('user');
+      const result = await request(app)
+        .patch('/users/me')
+        .send(bodies[scenario])
+        .auth(token, { type: 'bearer' });
 
-    expect(result.status).toBe(400);
-  })
-
+      expect(result.status).toBe(400);
+    },
+  );
 });

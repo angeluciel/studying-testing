@@ -1,4 +1,6 @@
 import pino, { type LoggerOptions, type TransportTargetOptions } from 'pino';
+import { Client } from '@elastic/elasticsearch';
+import { Writable } from 'node:stream';
 import { env } from '../config/env';
 
 const isDev = process.env.NODE_ENV !== 'production';
@@ -17,7 +19,7 @@ const baseOptions: LoggerOptions = {
     service: 'backend',
     env: env.NODE_ENV ?? 'development',
   },
-  timestamp: pino.stdTimeFunctions.isoTime,
+  timestamp: () => `,"@timestamp":"${new Date().toISOString()}"`,
 };
 
 const devTarget: TransportTargetOptions = {
@@ -30,50 +32,44 @@ const devTarget: TransportTargetOptions = {
   },
 };
 
-const elasticTarget: TransportTargetOptions = {
-  target: 'pino-elasticsearch',
-  level: 'info',
-  options: {
-    node: env.ELASTIC_NODE,
-    auth: {
-      apiKey: env.ELASTIC_API_KEY,
+function createElasticStream(): Writable {
+  const client = new Client({
+    node: env.ELASTIC_NODE!,
+    auth: { apiKey: env.ELASTIC_API_KEY! },
+  });
+
+  const indexName = env.ELASTIC_INDEX ?? 'express-logs';
+
+  return new Writable({
+    // Parse each JSON line from pino and index it
+    write(chunk: Buffer, _encoding, callback) {
+      // Always mirror to stdout so logs are visible locally too
+      process.stdout.write(chunk);
+
+      try {
+        const doc = JSON.parse(chunk.toString());
+        client.index({ index: indexName, document: doc }).catch((err: Error) => {
+          process.stderr.write(`[es-transport] ${err.message}\n`);
+        });
+      } catch (err) {
+        process.stderr.write(`[es-transport] parse error: ${(err as Error).message}\n`);
+      }
+
+      callback();
     },
-    index: env.ELASTIC_INDEX ?? 'express-logs',
-    esVersion: 8,
-    flushBytes: 1000,
-    flushInterval: 3000,
-  },
-};
-
-const stdoutTarget: TransportTargetOptions = {
-  target: 'pino/file',
-  level: 'info',
-  options: { destination: 1 },
-};
-
-console.log('[logger] NODE_ENV:', process.env.NODE_ENV);
-console.log('[logger] isProd:', isProd, 'will ship to ES:', isProd && !isTest);
-console.log('[logger] ELASTIC_NODE:', env.ELASTIC_NODE ? 'SET' : 'MISSING');
-console.log('[logger] ELASTIC_API_KEY:', env.ELASTIC_API_KEY ? 'SET' : 'MISSING');
-
-const transport = (() => {
-  if (isTest) return undefined;
-  if (isProd) {
-    return pino.transport({
-      targets: [elasticTarget, stdoutTarget],
-    });
-  }
-  return pino.transport({ targets: [devTarget] });
-})();
-
-if (transport) {
-  transport.on('error', (err) =>
-    process.stderr.write(`[pino-transport] ${err.stack ?? err.message}\n`),
-  );
-  transport.on('worker:error', (err) =>
-    process.stderr.write(`[pino-worker] ${err.stack ?? err.message}\n`),
-  );
-  transport.on('close', () => process.stderr.write('[pino-transport] closed unexpectedly\n'));
+  });
 }
 
-export const logger = pino(baseOptions, transport);
+function createLogger() {
+  if (isTest) {
+    return pino({ ...baseOptions, level: 'silent' });
+  }
+
+  if (isProd) {
+    return pino(baseOptions, createElasticStream());
+  }
+
+  return pino(baseOptions, pino.transport({ targets: [devTarget] }));
+}
+
+export const logger = createLogger();

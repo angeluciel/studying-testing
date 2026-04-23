@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { userController } from '../../container';
-import { authMiddleware } from '../../middlewares/auth.middleware';
-import { requireRole } from '../../middlewares/requireRole.middleware';
+import { userController } from '@/container';
+import { authMiddleware } from '@/middlewares/auth.middleware';
+import { requireRole } from '@/middlewares/requireRole.middleware';
 
 export const usersRouter = Router();
 

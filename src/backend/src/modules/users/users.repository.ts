@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { UserRow, CreateUserInput, UpdateUserInput } from '../../types/user';
+import { UserRow, CreateUserInput, UpdateUserInput } from '@/types/user';
 import { resourceLimits } from 'node:worker_threads';
 
 export class UserRepository {

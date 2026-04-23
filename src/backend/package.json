@@ -4,15 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
+    "dev": "tsx watch --tsconfig tsconfig.json src/server.ts",
+    "build": "tsc && tsc-alias",
+    "start": "node -r tsconfig-paths/register dist/server.js",
     "test": "cross-env NODE_ENV=test vitest run",
     "test:watch": "cross-env NODE_ENV=test vitest",
     "test:coverage": "cross-env NODE_ENV=test vitest run --coverage",
-    "seed": "tsx src/db/seed-runner.ts",
-    "migrate": "NODE_ENV=development tsx src/db/migrate.ts",
-    "migrate:test": "cross-env NODE_ENV=test tsx src/db/migrate.ts"
+    "seed": "tsx --tsconfig tsconfig.json src/db/seed-runner.ts",
+    "migrate": "NODE_ENV=development tsx --tsconfig tsconfig.json src/db/migrate.ts",
+    "migrate:test": "cross-env NODE_ENV=test tsx --tsconfig tsconfig.json src/db/migrate.ts"
   },
   "keywords": [],
   "author": "",
@@ -49,6 +49,8 @@
     "prettier": "^3.8.3",
     "supertest": "^7.2.2",
     "testcontainers": "^11.14.0",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"

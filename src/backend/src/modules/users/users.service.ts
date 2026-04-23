@@ -1,9 +1,9 @@
-import { hashPassword } from '../../utils/password';
-import { sendMailWithTemplate } from '../../utils/mail';
-import { WelcomeEmail } from '../../emails/WelcomeEmail';
-import { env } from '../../config/env';
-import { UpdateUserInput, UserRow } from '../../types/user';
-import { AppError } from '../../middlewares/error.middleware';
+import { hashPassword } from '@/utils/password';
+import { sendMailWithTemplate } from '@/utils/mail';
+import { WelcomeEmail } from '@/emails/WelcomeEmail';
+import { env } from '@/config/env';
+import { UpdateUserInput, UserRow } from '@/types/user';
+import { AppError } from '@/middlewares/error.middleware';
 import { DatabaseError } from 'pg';
 import { UserRepository } from './users.repository';
 

@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
 import * as usersService from './users.service';
-import { AppError } from '../../middlewares/error.middleware';
+import { AppError } from '@/middlewares/error.middleware';
 import { UserService } from './users.service';
-import { createUserSchema, updateMeSchema, toUserResponse } from '../../types/user.dto';
+import { createUserSchema, updateMeSchema, toUserResponse } from '@/types/user.dto';
 
 export class UserController {
   constructor(private readonly userService: UserService) {}

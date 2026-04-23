@@ -34,7 +34,7 @@ export class AuthService {
     const rawToken = generateRawToken();
     const tokenHash = hashToken(rawToken);
 
-    await this.authRepository.insertPasswordChangeToken(user.id, tokenHash);
+    await this.authRepository.inserPasswordChangeToken(user.id, tokenHash);
     const resetLink = `${env.APP_BASE_URL}/reset-password?token=${rawToken}`;
 
     await sendMailWithTemplate(
@@ -45,7 +45,7 @@ export class AuthService {
   }
   async changePassword(token: string, newPassword: string) {
     const tokenHash = hashToken(token);
-    const row = await this.authRepository.changePassword(tokenHash);
+    const row = await this.authRepository.findValidPasswordChangeTokenByHash(tokenHash);
 
     if (!row) throw new AppError(400, 'Invalid or expired token');
 

@@ -1,5 +1,5 @@
-import { describe, it  } from "vitest";
+import { describe, it } from 'vitest';
 
 describe('auth routes', () => {
-    it('placeholder', () => {});
-})
+  it.todo('placeholder', () => {});
+});

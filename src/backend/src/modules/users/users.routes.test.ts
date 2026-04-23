@@ -8,13 +8,19 @@ import { Body } from '@react-email/components';
 import * as usersService from './users.service';
 import { signAccessToken } from '../../utils/jwt';
 import { UserRow } from '../../types/user';
+import { AppError } from '../../middlewares/error.middleware';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
 }));
-
 vi.mock('./users-service', () => ({
   getMe: vi.fn(),
+}));
+vi.mock('./users/', () => ({
+  postMe: vi.fn(),
+}));
+vi.mock('../db', () => ({
+  pool: { query: vi.fn() },
 }));
 
 describe('GET /health', () => {
@@ -114,7 +120,6 @@ describe('POST /users', () => {
     it.todo('creates role=user even if role=admin is sent', async () => {});
   });
 
-  // TEST EMAIL
   describe('email validation', () => {
     it('returns 409 if email already exists', async () => {
       await createUser({
@@ -182,8 +187,12 @@ describe('POST /users', () => {
   });
 
   describe('error handling', () => {
-    it('re-throws AppError as-is', async () => {});
-    it('wraps unexpected errors in a 500 AppError', async () => {});
+    it('re-throws AppError as-is', async () => {
+      const appError = new AppError(409, 'User already exists');
+    });
+    it('wraps unexpected errors in a 500 AppError', async () => {
+      // vi.mocked(pool.query).mockRejectedValue(new AppError(400, 'DB connection failed'))
+    });
   });
 });
 
@@ -211,28 +220,30 @@ describe('PATCH /users/me', async () => {
     });
   });
 
-  let user: UserRow;
-  beforeAll(async () => {
-    ({ user } = await createAuthenticatedUser('user'));
-    return user;
+  describe('data validation', () => {
+    let user: UserRow;
+    beforeAll(async () => {
+      ({ user } = await createAuthenticatedUser('user'));
+      return user;
+    });
+
+    it.each([['blank name'], ['blank surname'], ['both blank'], ['both missing']])(
+      'returns 400 when %s',
+      async (scenario) => {
+        const bodies: Record<string, object> = {
+          'blank name': { name: '', surname: 'x' },
+          'blank surname': { name: 'x', surname: '' },
+          'both blank': { name: '', surname: '' },
+          'both missing': {},
+        };
+        const { token } = await createAuthenticatedUser('user');
+        const result = await request(app)
+          .patch('/users/me')
+          .send(bodies[scenario])
+          .auth(token, { type: 'bearer' });
+
+        expect(result.status).toBe(400);
+      },
+    );
   });
-
-  it.each([['blank name'], ['blank surname'], ['both blank'], ['both missing']])(
-    'returns 400 when %s',
-    async (scenario) => {
-      const bodies: Record<string, object> = {
-        'blank name': { name: '', surname: 'x' },
-        'blank surname': { name: 'x', surname: '' },
-        'both blank': { name: '', surname: '' },
-        'both missing': {},
-      };
-      const { token } = await createAuthenticatedUser('user');
-      const result = await request(app)
-        .patch('/users/me')
-        .send(bodies[scenario])
-        .auth(token, { type: 'bearer' });
-
-      expect(result.status).toBe(400);
-    },
-  );
 });

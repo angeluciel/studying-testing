@@ -3,24 +3,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { app } from '../../app';
 import { createAuthenticatedUser } from '../../tests/helpers/auth';
 import { sendMailWithTemplate } from '../../utils/mail';
-import { Body } from '@react-email/components';
-import * as usersService from './users.service';
-import { signAccessToken } from '../../utils/jwt';
 import { UserRow } from '../../types/user';
 import { AppError } from '../../middlewares/error.middleware';
-import { UserRepository } from './users.repository';
-import { UserService } from './users.service';
-import { UserController } from './users.controller';
 import { pool } from '../../db/pool';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
-}));
-vi.mock('./users-service', () => ({
-  getMe: vi.fn(),
-}));
-vi.mock('./users/', () => ({
-  postMe: vi.fn(),
 }));
 vi.mock('../db', () => ({
   pool: { query: vi.fn() },
@@ -120,17 +108,19 @@ describe('POST /users', () => {
 
   describe('email validation', () => {
     it('returns 409 if email already exists', async () => {
+      const emailToBeTested = 'single@email.com';
+
       await request(app).post('/users').send({
-        email: 'test@example.com',
+        email: emailToBeTested,
         name: 'first',
         surname: 'user',
         password: '1234567890abcdefghijklmnopqrstuvwxyz',
       });
 
-      vi.clearAllMocks();
+      vi.mocked(sendMailWithTemplate).mockClear();
 
       const response = await request(app).post('/users').send({
-        email: 'test@example.com',
+        email: emailToBeTested,
         name: 'second',
         surname: 'user',
         password: '1234567890abcdefghijklmnopqrstuvwxyz',

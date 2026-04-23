@@ -8,7 +8,7 @@ import { createUserSchema, updateMeSchema, toUserResponse } from '../../types/us
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  async createUser(req: Request, res: Response, next: NextFunction) {
+  createUser = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const body = createUserSchema.parse(req.body);
       const user = await this.userService.createUser(body);
@@ -16,16 +16,16 @@ export class UserController {
     } catch (err) {
       next(err);
     }
-  }
-  async getMe(req: Request, res: Response, next: NextFunction) {
+  };
+  getMe = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = await this.userService.getMe(req.user!.id);
       return res.json(toUserResponse(user));
     } catch (err) {
       next(err);
     }
-  }
-  async updateMe(req: Request, res: Response, next: NextFunction) {
+  };
+  updateMe = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const body = updateMeSchema.parse(req.body);
       const user = await this.userService.updateMe(req.user!.id, body);
@@ -33,8 +33,8 @@ export class UserController {
     } catch (err) {
       next(err);
     }
-  }
-  async deleteUser(req: Request<{ id: string }>, res: Response, next: NextFunction) {
+  };
+  deleteUser = async (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
     try {
       const targetUserId = req.params.id;
 
@@ -47,5 +47,5 @@ export class UserController {
     } catch (err) {
       next(err);
     }
-  }
+  };
 }

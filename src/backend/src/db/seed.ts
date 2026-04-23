@@ -1,7 +1,7 @@
 import { pool } from './pool';
-import { createUser } from '../modules/users/users.service';
 import { env } from '../config/env';
 import { UserRow } from '../types/user';
+import { userService } from '../container';
 
 export async function seedAdminUser(): Promise<UserRow> {
   const existing = await pool.query(
@@ -17,7 +17,7 @@ export async function seedAdminUser(): Promise<UserRow> {
     throw new Error('TEMP_PASSWORD must exist');
   }
 
-  const user = await createUser({
+  const user = await userService.createUser({
     email: 'admin@example.com',
     name: 'Main',
     surname: 'Admin',
@@ -44,7 +44,7 @@ export async function seedRegularUser(): Promise<UserRow> {
     throw new Error('TEMP_PASSWORD must exist');
   }
 
-  const user = await createUser({
+  const user = await userService.createUser({
     email: 'user@example.com',
     name: 'default',
     surname: 'user',

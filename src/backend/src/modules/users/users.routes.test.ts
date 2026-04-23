@@ -3,12 +3,15 @@ import { describe, it, expect, vi } from 'vitest';
 import { app } from '../../app';
 import { createAuthenticatedUser } from '../../tests/helpers/auth';
 import { sendMailWithTemplate } from '../../utils/mail';
-import { createUser } from './users.service';
 import { Body } from '@react-email/components';
 import * as usersService from './users.service';
 import { signAccessToken } from '../../utils/jwt';
 import { UserRow } from '../../types/user';
 import { AppError } from '../../middlewares/error.middleware';
+import { UserRepository } from './users.repository';
+import { UserService } from './users.service';
+import { UserController } from './users.controller';
+import { pool } from '../../db/pool';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
@@ -54,26 +57,21 @@ describe('GET /users/me', () => {
       name: user.name,
       surname: user.surname,
       role: user.role,
-      email_confirmed: expect.any(Boolean),
-      is_active: expect.any(Boolean),
-      created_at: expect.any(String),
+      emailConfirmed: expect.any(Boolean),
+      isActive: expect.any(Boolean),
+      createdAt: expect.any(String),
     });
   });
 
   it('returns 404 if user no longer exists', async () => {
-    const spy = vi.spyOn(usersService, 'getMe').mockResolvedValue(null);
-    const token = signAccessToken({
-      sub: 'deleted-user-id',
-      role: 'user',
-      email: 'deleted@example.com',
-    });
+    const { user, token } = await createAuthenticatedUser('user');
 
-    const response = await request(app).get('/users/me').auth(token, { type: `bearer` });
+    await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
+
+    const response = await request(app).get('/users/me').auth(token, { type: 'bearer' });
 
     expect(response.status).toBe(404);
-    expect(response.body).toMatchObject({ message: 'User not found' });
-
-    spy.mockRestore();
+    expect(response.body).toMatchObject({ message: 'User not found.' });
   });
 });
 
@@ -98,7 +96,7 @@ describe('POST /users', () => {
     expect(sendMailWithTemplate).toHaveBeenCalledTimes(1);
     expect(sendMailWithTemplate).toHaveBeenCalledWith(
       'teste@example.com',
-      'Welcome — your account is ready',
+      'Welcome - Your account is ready.',
       expect.anything(),
     );
     expect(response.body.email).toBe('teste@example.com');
@@ -108,9 +106,9 @@ describe('POST /users', () => {
       name: 'teste',
       surname: 'testando',
       role: 'user',
-      email_confirmed: false,
-      is_active: expect.any(Boolean),
-      created_at: expect.any(String),
+      emailConfirmed: false,
+      isActive: expect.any(Boolean),
+      createdAt: expect.any(String),
     });
     expect(response.body.password).toBeUndefined();
     expect(response.body.password_hash).toBeUndefined();
@@ -122,7 +120,7 @@ describe('POST /users', () => {
 
   describe('email validation', () => {
     it('returns 409 if email already exists', async () => {
-      await createUser({
+      await request(app).post('/users').send({
         email: 'test@example.com',
         name: 'first',
         surname: 'user',

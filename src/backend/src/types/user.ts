@@ -10,3 +10,16 @@ export type UserRow = {
   is_active: boolean;
   created_at: Date;
 };
+
+export type CreateUserInput = {
+  email: string;
+  name: string;
+  surname: string;
+  passwordHash: string;
+  role?: 'admin' | 'user';
+};
+
+export type UpdateUserInput = {
+  name?: string;
+  surname?: string;
+};

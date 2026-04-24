@@ -1,89 +1,66 @@
-import { pool } from "../../db/pool";
-import { hashPassword } from "../../utils/password";
-import { sendMailWithTemplate } from "../../utils/mail";
-import { WelcomeEmail } from "../../emails/WelcomeEmail";
-import { env } from "../../config/env";
-import { UserRow } from "../../types/user";
+import { hashPassword } from '@/utils/password';
+import { sendMailWithTemplate } from '@/utils/mail';
+import { WelcomeEmail } from '@/emails/WelcomeEmail';
+import { env } from '@/config/env';
+import { UpdateUserInput, UserRow } from '@/types/user';
+import { AppError } from '@/middlewares/error.middleware';
+import { DatabaseError } from 'pg';
+import { UserRepository } from './users.repository';
 
-type CreateUserInput = {
-    email: string;
-    name: string;
-    surname: string;
-    password: string;
-    role?: "admin" | "user";
+export type CreateUserInput = {
+  email: string;
+  name: string;
+  surname: string;
+  password: string;
+  role?: 'admin' | 'user';
 };
 
-export async function createUser(input: CreateUserInput) {
-    const passwordhash = await hashPassword(input.password);
+export class UserService {
+  constructor(private readonly userRepo: UserRepository) {}
 
-    const result = await pool.query<UserRow>(
-        `insert into public.users (email, name, surname, password_hash, role)
-        values ($1, $2, $3, $4, $5)
-        returning id, email, name, surname, role, email_confirmed, is_active, created_at`,
-        [
-            input.email.toLowerCase(),
-            input.name,
-            input.surname,
-            passwordhash,
-            input.role ?? "user",
-        ]
-    );
+  async createUser(input: CreateUserInput) {
+    const passwordHash = await hashPassword(input.password);
 
-    const user = result.rows[0];
+    try {
+      const user = await this.userRepo.create({ ...input, passwordHash });
 
-    await sendMailWithTemplate(
+      await sendMailWithTemplate(
         user.email,
-        "Welcome — your account is ready",
+        'Welcome - Your account is ready.',
         WelcomeEmail({
-            name: user.name,
-            email: user.email,
-            tempPassword: input.password,
-            loginUrl: `${env.APP_BASE_URL}/login`,
-        })
-    );
+          name: user.name,
+          email: user.email,
+          tempPassword: input.password,
+          loginUrl: `${env.APP_BASE_URL}/login`,
+        }),
+      );
+
+      return user;
+    } catch (err: unknown) {
+      if (err instanceof DatabaseError && err.code === '23505') {
+        throw new AppError(409, 'Email already exists.');
+      }
+      if (err instanceof AppError) {
+        throw err;
+      }
+
+      throw new AppError(500, 'An unexpected error occurred.');
+    }
+  }
+
+  async getMe(userId: string) {
+    const user = await this.userRepo.findById(userId);
+    if (!user) throw new AppError(404, 'User not found.');
+    return user;
+  }
+
+  async updateMe(userId: string, data: UpdateUserInput) {
+    const user = await this.userRepo.update(userId, data);
+    if (!user) throw new AppError(404, 'User not found.');
 
     return user;
-}
-
-export async function getMe(userId: string) {
-    const result = await pool.query(
-        `select id, email, name, surname, role, email_confirmed, is_active, created_at
-        from public.users
-        where id = $1`,
-        [userId]
-    );
-
-    return result.rows[0] ?? null;
-}
-
-export async function updateMe(
-    userId: string,
-    data: { name?: string; surname?: string }
-) {
-    const current = await pool.query(
-        `select id, name, surname from public.users where id = $1`,
-        [userId]
-    );
-
-    const user = current.rows[0];
-    if (!user) throw new Error("User not found");
-
-    const result = await pool.query(
-        `update users
-        set name = $1,
-        surname = $2
-        where id = $3
-        returning id, email, name, surname, role, email_confirmed, is_active, created_at`,
-        [
-            data.name ?? user.name,
-            data.surname ?? user.surname,
-            userId,
-        ]
-    );
-
-    return result.rows[0];
-}
-
-export async function deleteUser(targetUserId: string) {
-    await pool.query(`delete from public.users where id = $1`, [targetUserId]);
+  }
+  async deleteUser(userId: string) {
+    await this.userRepo.delete(userId);
+  }
 }

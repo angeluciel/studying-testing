@@ -7,4 +7,6 @@ export const pool = new Pool({
   ssl: env.NODE_ENV == 'production' ? { rejectUnauthorized: false } : false,
 });
 
-const db = drizzle({ client: pool });
+export const Db = drizzle({ client: pool });
+
+export type DrizzleDb = typeof Db;

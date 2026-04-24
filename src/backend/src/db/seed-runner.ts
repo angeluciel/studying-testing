@@ -1,13 +1,14 @@
-import { pool } from "./pool";
-import { seedAdminUser } from "./seed";
+import { pool } from './pool';
+import { SeedUtils } from './seed';
+import { Db } from './pool';
 
 async function main() {
-    await seedAdminUser();
-    await pool.end();
+  const seed = new SeedUtils(Db);
+  await seed.seedUser('joao@exemplo.com', 'admin');
+  await seed.seedUser('user@exemplo.com', 'user');
 }
 
 main().catch(async (err) => {
-    console.error("Seed failed:", err);
-    await pool.end();
-    process.exit(1);
-})
+  console.error('Seed failed:', err);
+  process.exit(1);
+});

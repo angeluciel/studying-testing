@@ -1,20 +1,25 @@
-import { Pool } from "pg";
+import { DrizzleDb } from '@/db/pool';
+import { sql } from 'drizzle-orm';
 
-export async function resetDatabase(pool: Pool): Promise<void> {
-  await pool.query(`
-    DO $$
-    DECLARE
-      r RECORD;
-    BEGIN
-      FOR r IN (
-        SELECT tablename
-        FROM pg_tables
-        WHERE schemaname = 'public'
-          AND tablename <> 'migrations'
-      )
-      LOOP
-        EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' RESTART IDENTITY CASCADE';
-      END LOOP;
-    END $$;
-  `);
+export class TestDatabase {
+  constructor(private readonly db: DrizzleDb) {}
+
+  resetDatabase = async () => {
+    await this.db.execute(sql`
+        DO $$
+        DECLARE
+          r RECORD;
+        BEGIN
+          FOR r in (
+            SELECT tablename
+            FROM pg_tables
+            WHERE schemaname = 'public'
+              AND tablename <> 'migrations'
+            )
+            LOOP
+              EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' RESTART IDENTITY CASCADE';
+            END LOOP;
+          END $$;
+      `);
+  };
 }

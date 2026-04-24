@@ -1,58 +1,46 @@
-import { pool } from './pool';
+import { NextFunction } from 'express';
+import { pool, DrizzleDb } from './pool';
 import { env } from '../config/env';
 import { UserRow } from '../types/user';
 import { userService } from '../container';
+import { usersTable } from './schema';
+import { eq } from 'drizzle-orm';
+import { hashPassword } from '@/utils/password';
 
-export async function seedAdminUser(): Promise<UserRow> {
-  const existing = await pool.query(
-    `SELECT id, email, name, surname, role, email_confirmed, is_active, created_at FROM users WHERE email = $1 LIMIT 1`,
-    ['admin@example.com'],
-  );
+export class SeedUtils {
+  constructor(private readonly db: DrizzleDb) {}
 
-  if (existing.rows.length > 0) {
-    return existing.rows[0];
-  }
+  seedUser = async (mockEmail: string, role: 'admin' | 'user') => {
+    const existing = await this.db.select().from(usersTable).where(eq(usersTable.email, mockEmail));
 
-  if (!env.TEMP_PASSWORD) {
-    throw new Error('TEMP_PASSWORD must exist');
-  }
+    if (existing.length > 0) {
+      return existing[0];
+    }
+    // unit test call this function and check message is correct, and if length > 1.
+    if (!env.TEMP_PASSWORD) {
+      throw new Error('TEMP_PASSWORD must exist.');
+    }
+    const password = await hashPassword(env.TEMP_PASSWORD);
 
-  const user = await userService.createUser({
-    email: 'admin@example.com',
-    name: 'Main',
-    surname: 'Admin',
-    password: env.TEMP_PASSWORD,
-    role: 'admin',
-  });
-
-  console.log('Initial admin user created successfully.');
-
-  return user;
-}
-
-export async function seedRegularUser(): Promise<UserRow> {
-  const existing = await pool.query(
-    `SELECT id, email, name, surname, role, email_confirmed, is_active, created_at FROM users WHERE email = $1 LIMIT 1`,
-    ['user@example.com'],
-  );
-
-  if (existing.rows.length > 0) {
-    return existing.rows[0];
-  }
-
-  if (!env.TEMP_PASSWORD) {
-    throw new Error('TEMP_PASSWORD must exist');
-  }
-
-  const user = await userService.createUser({
-    email: 'user@example.com',
-    name: 'default',
-    surname: 'user',
-    password: env.TEMP_PASSWORD,
-    role: 'user',
-  });
-
-  console.log('Initial default user created successfully.');
-
-  return user;
+    const user = await this.db
+      .insert(usersTable)
+      .values({
+        name: 'mock',
+        email: mockEmail,
+        surname: 'user',
+        password_hash: password,
+        role: role,
+      })
+      .returning({
+        id: usersTable.id,
+        email: usersTable.email,
+        name: usersTable.name,
+        surname: usersTable.surname,
+        role: usersTable.role,
+        email_confirmed: usersTable.email_confirmed,
+        is_active: usersTable.is_active,
+        created_at: usersTable.created_at,
+      });
+    return user;
+  };
 }

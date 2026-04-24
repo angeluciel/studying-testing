@@ -1,50 +1,76 @@
-import { Pool } from 'pg';
+import { usersTable } from './../../db/schema';
 import { UserRow, CreateUserInput, UpdateUserInput } from '@/types/user';
-import { resourceLimits } from 'node:worker_threads';
+import { DrizzleDb } from '@/db/pool';
+import { eq, sql } from 'drizzle-orm';
 
 export class UserRepository {
-  constructor(private readonly db: Pool) {}
+  constructor(private readonly db: DrizzleDb) {}
 
   async create(input: CreateUserInput): Promise<UserRow> {
-    const result = await this.db.query<UserRow>(
-      `INSERT INTO public.users (email, name, surname, password_hash, role)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, email, name, surname, role, email_confirmed, is_active, created_at`,
-      [
-        input.email.toLowerCase(),
-        input.name,
-        input.surname,
-        input.passwordHash,
-        input.role ?? 'user',
-      ],
-    );
-    return result.rows[0];
+    const result = await this.db
+      .insert(usersTable)
+      .values({
+        name: input.name,
+        email: input.email,
+        surname: input.surname,
+        password_hash: input.passwordHash,
+        role: input.role ?? 'user',
+      })
+      .returning({
+        id: usersTable.id,
+        email: usersTable.email,
+        name: usersTable.name,
+        surname: usersTable.surname,
+        role: usersTable.role,
+        email_confirmed: usersTable.email_confirmed,
+        is_active: usersTable.is_active,
+        created_at: usersTable.created_at,
+      });
+
+    return result[0];
   }
 
   async findById(id: string): Promise<UserRow | null> {
-    const result = await this.db.query(
-      `select id, email, name, surname, role, email_confirmed, is_active, created_at
-            from public.users
-            where id = $1`,
-      [id],
-    );
-    return result.rows[0] ?? null;
+    const result = await this.db
+      .select({
+        id: usersTable.id,
+        email: usersTable.email,
+        name: usersTable.name,
+        surname: usersTable.surname,
+        role: usersTable.role,
+        email_confirmed: usersTable.email_confirmed,
+        is_active: usersTable.is_active,
+        created_at: usersTable.created_at,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, id));
+
+    return result[0];
   }
 
   async update(id: string, data: UpdateUserInput): Promise<UserRow | null> {
-    const result = await this.db.query<UserRow>(
-      `UPDATE public.users
-        SET
-            name    = COALESCE($1, name),
-            surname = COALESCE($2, surname)
-        WHERE id = $3
-        RETURNING id, email, name, surname, role, email_confirmed, is_active, created_at`,
-      [data.name ?? null, data.surname ?? null, id],
-    );
-    return result.rows[0] ?? null;
+    const result = await this.db
+      .update(usersTable)
+      .set({
+        name: sql`COALESCE(${data.name}, name)`,
+        surname: sql`COALESCE(${data.surname}, surname)`,
+      })
+      .where(eq(usersTable.id, id))
+      .returning({
+        id: usersTable.id,
+        email: usersTable.email,
+        name: usersTable.name,
+        surname: usersTable.surname,
+        role: usersTable.role,
+        email_confirmed: usersTable.email_confirmed,
+        is_active: usersTable.is_active,
+        created_at: usersTable.created_at,
+      });
+
+    return result[0];
   }
 
   async delete(id: string): Promise<void> {
-    await this.db.query(`DELETE FROM public.users WHERE id = $1`, [id]);
+    await this.db.delete(usersTable).where(eq(usersTable.id, id));
   }
 }

@@ -24,14 +24,19 @@ export class TestDatabaseContainer {
       .withPassword('postgres')
       .start();
 
-    this.pool = new Pool({
-      connectionString: this.container.getConnectionUri(),
-      ssl: false,
-    });
+    try {
+      this.pool = new Pool({
+        connectionString: this.container.getConnectionUri(),
+        ssl: false,
+      });
+      logger.info(`Postgres container started at ${this.container.getConnectionUri()}`);
 
-    logger.info(`Postgres container started at ${this.container.getConnectionUri()}`);
-
-    await runMigrations(this.pool);
+      await runMigrations(this.pool);
+    } catch (err) {
+      await this.container.stop();
+      this.container = null;
+      throw err;
+    }
 
     return { container: this.container, pool: this.pool };
   };
@@ -47,7 +52,7 @@ export class TestDatabaseContainer {
     }
   };
 
-  getPool = async () => {
+  getPool = () => {
     if (!this.pool) {
       throw new Error(
         `Test Pool not initialized. Make sure testContainer is started in GlobalSetup.ts.`,
@@ -72,10 +77,8 @@ export class TestDatabaseContainer {
 
       const tableList = tables.map((table) => `"${table}"`).join(', ');
 
-      if (tableList) {
-        await this.pool.query(`TRUNCATE TABLE ${tableList} CASCADE`);
-        logger.debug(`Database reset, ${tables.length} tables truncated.`);
-      }
+      await this.pool.query(`TRUNCATE TABLE ${tableList} CASCADE`);
+      logger.debug(`Database reset, ${tables.length} tables truncated.`);
     } catch (err) {
       logger.error(`Failed to reset test database: ${err}`);
       throw err;

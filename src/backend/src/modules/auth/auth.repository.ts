@@ -14,7 +14,7 @@ export class AuthRepository {
     return result.rows[0] ?? null;
   }
 
-  async inserPasswordChangeToken(userId: string, tokenHash: string) {
+  async insertPwdChangeTk(userId: string, tokenHash: string) {
     const result = await this.db.query(
       `insert into password_change_tokens (user_id, token_hash, expires_at)
         values ($1, $2, now() + interval '30 minutes')`,
@@ -23,7 +23,7 @@ export class AuthRepository {
     return result.rows[0] ?? null;
   }
 
-  async findValidPasswordChangeTokenByHash(tokenHash: string) {
+  async findPwdChangeTkByHash(tokenHash: string) {
     const result = await this.db.query(
       `select pct.id, pct.user_id
             from password_change_tokens pct
@@ -36,7 +36,7 @@ export class AuthRepository {
     return result.rows[0] ?? null;
   }
 
-  async updatePasswordAndConsumeToken(params: {
+  async updatePwdAndConsumeTk(params: {
     userId: string;
     tokenId: string;
     passwordHash: string;

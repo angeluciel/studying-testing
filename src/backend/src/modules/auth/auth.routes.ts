@@ -1,8 +1,10 @@
-import { Router } from "express";
-import * as controller from "./auth.controller";
+import { Router } from 'express';
+import { AuthController } from './auth.controller';
+import { authController } from '@/container';
 
 export const authRouter = Router();
 
-authRouter.post("/login", controller.login);
-authRouter.post("/request-password-change", controller.requestPasswordChange);
-authRouter.post("/change-password", controller.changePassword);
+// --- All public routes ---
+authRouter.post('/login', authController.login);
+authRouter.post('/request-password-change', authController.requestPwdChange);
+authRouter.post('/change-password', authController.changePwd);

@@ -4,8 +4,8 @@ import { WelcomeEmail } from '@/emails/WelcomeEmail';
 import { env } from '@/config/env';
 import { UpdateUserInput, UserRow } from '@/types/user';
 import { AppError } from '@/middlewares/error.middleware';
-import { DatabaseError } from 'pg';
 import { UserRepository } from './users.repository';
+import { DatabaseError } from 'pg';
 
 export type CreateUserInput = {
   email: string;
@@ -37,7 +37,10 @@ export class UserService {
 
       return user;
     } catch (err: unknown) {
-      if (err instanceof DatabaseError && err.code === '23505') {
+      if (
+        (err instanceof DatabaseError && err.code === '23505') ||
+        (err instanceof Error && err.cause instanceof DatabaseError && err.cause.code === '23505')
+      ) {
         throw new AppError(409, 'Email already exists.');
       }
       if (err instanceof AppError) {

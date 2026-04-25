@@ -1,3 +1,4 @@
+import { TestDatabase } from '@/db/resetDatabase.js';
 import { beforeEach, afterAll } from 'vitest';
 import { inject } from 'vitest';
 
@@ -8,9 +9,9 @@ process.env.SMTP_PORT = inject('SMTP_PORT');
 
 beforeEach(async () => {
   vi.clearAllMocks();
-  const { pool } = await import('../db/pool.js');
-  const { resetDatabase } = await import('../db/resetDatabase.js');
-  await resetDatabase(pool);
+  const { Db } = await import('@/db/pool.js');
+  const testDatabase = new TestDatabase(Db);
+  await testDatabase.resetDatabase();
 });
 
 afterAll(async () => {

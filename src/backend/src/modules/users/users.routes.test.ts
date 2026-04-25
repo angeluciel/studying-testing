@@ -1,11 +1,11 @@
 import request from 'supertest';
 import { describe, it, expect, vi } from 'vitest';
 import { app } from '@/app';
-import { createAuthenticatedUser } from '@/tests/helpers/auth';
+import { Auth } from '@/tests/helpers/auth';
 import { sendMailWithTemplate } from '@/utils/mail';
 import { UserRow } from '@/types/user';
 import { AppError } from '@/middlewares/error.middleware';
-import { pool } from '@/db/pool';
+import { Db, pool } from '@/db/pool';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
@@ -13,6 +13,7 @@ vi.mock('../../utils/mail', () => ({
 vi.mock('../db', () => ({
   pool: { query: vi.fn() },
 }));
+const auth = new Auth(Db);
 
 describe('GET /health', () => {
   it('returns 200 with ok: true', async () => {
@@ -35,7 +36,7 @@ describe('GET /users/me', () => {
 
   it('returns 200 with authenticated user data', async () => {
     // seed test db
-    const { user, token } = await createAuthenticatedUser('admin');
+    const { user, token } = await auth.createUser('admin');
     const response = await request(app).get('/users/me').auth(token, { type: 'bearer' });
 
     expect(response.status).toBe(200);
@@ -52,7 +53,7 @@ describe('GET /users/me', () => {
   });
 
   it('returns 404 if user no longer exists', async () => {
-    const { user, token } = await createAuthenticatedUser('user');
+    const { user, token } = await auth.createUser('user');
 
     await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
 
@@ -211,7 +212,7 @@ describe('PATCH /users/me', async () => {
   describe('data validation', () => {
     let user: UserRow;
     beforeAll(async () => {
-      ({ user } = await createAuthenticatedUser('user'));
+      ({ user } = await auth.createUser('user'));
       return user;
     });
 
@@ -224,7 +225,7 @@ describe('PATCH /users/me', async () => {
           'both blank': { name: '', surname: '' },
           'both missing': {},
         };
-        const { token } = await createAuthenticatedUser('user');
+        const { token } = await auth.createUser('user');
         const result = await request(app)
           .patch('/users/me')
           .send(bodies[scenario])

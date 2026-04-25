@@ -1,69 +1,66 @@
-import { Pool } from 'pg';
+import { passwordChangeTokensTable, usersTable } from '@/db/schema';
+import { DrizzleDb } from '@/db/pool';
+import { eq, sql, isNull, and, gt } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 
 export class AuthRepository {
-  constructor(private readonly db: Pool) {}
+  constructor(private readonly db: DrizzleDb) {}
 
-  // PCT = Password Change Token
+  // PWD = Password
+  // Tk  = Token
   async findByEmail(email: string) {
-    const result = await this.db.query(
-      `select id, email, password_hash, role, is_active
-                from public.users
-                where email = $1`,
-      [email.toLowerCase()],
-    );
+    const result = await this.db
+      .select({
+        id: usersTable.id,
+        name: usersTable.name,
+        email: usersTable.email,
+        password_hash: usersTable.password_hash,
+        role: usersTable.role,
+        is_active: usersTable.is_active,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.email, email));
+
+    return result[0] ?? null;
+  }
+
+  async insertPwdChangeTk(userId: string, tokenHash: string) {
+    const result = await this.db.insert(passwordChangeTokensTable).values({
+      user_id: userId,
+      token_hash: tokenHash,
+      expires_at: sql`now() = interval '30 minutes'`,
+    });
+
     return result.rows[0] ?? null;
   }
 
-  async inserPasswordChangeToken(userId: string, tokenHash: string) {
-    const result = await this.db.query(
-      `insert into password_change_tokens (user_id, token_hash, expires_at)
-        values ($1, $2, now() + interval '30 minutes')`,
-      [userId, tokenHash],
-    );
-    return result.rows[0] ?? null;
+  async findPwdChangeTkByHash(tokenHash: string) {
+    const pct = alias(passwordChangeTokensTable, 'pct');
+    const result = await this.db
+      .select({ id: pct.id, user_id: pct.user_id })
+      .from(pct)
+      .where(
+        and(eq(pct.token_hash, tokenHash), isNull(pct.used_at), gt(pct.expires_at, sql`now()`)),
+      )
+      .limit(1);
+
+    return result[0] ?? null;
   }
 
-  async findValidPasswordChangeTokenByHash(tokenHash: string) {
-    const result = await this.db.query(
-      `select pct.id, pct.user_id
-            from password_change_tokens pct
-            where pct.token_hash = $1
-            and pct.user_at is null
-            and pct.expires_at > now()
-            limit 1`,
-      [tokenHash],
-    );
-    return result.rows[0] ?? null;
-  }
-
-  async updatePasswordAndConsumeToken(params: {
+  async updatePwdAndConsumeTk(params: {
     userId: string;
     tokenId: string;
     passwordHash: string;
   }): Promise<void> {
-    const client = await this.db.connect();
-
-    try {
-      await client.query('BEGIN');
-      await client.query(
-        `update users
-            set password_hash = $1
-            where id = $2`,
-        [params.passwordHash, params.userId],
-      );
-
-      await client.query(
-        `update password_change_tokens
-            set used_at = now()
-            where id = $1`,
-        [params.tokenId],
-      );
-      await client.query('COMMIT');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    await this.db.transaction(async (t) => {
+      await t
+        .update(usersTable)
+        .set({ password_hash: params.passwordHash })
+        .where(eq(usersTable.id, params.userId));
+      await t
+        .update(passwordChangeTokensTable)
+        .set({ used_at: sql`now()` })
+        .where(eq(passwordChangeTokensTable.id, params.tokenId));
+    });
   }
 }

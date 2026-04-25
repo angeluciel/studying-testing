@@ -41,6 +41,6 @@ export class SeedUtils {
         is_active: usersTable.is_active,
         created_at: usersTable.created_at,
       });
-    return user;
+    return user[0];
   };
 }

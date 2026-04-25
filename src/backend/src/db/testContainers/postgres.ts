@@ -12,7 +12,7 @@ export class TestDatabaseContainer {
     this.pool = null;
   }
 
-  start = async () => {
+  async start() {
     if (this.container && this.pool) {
       return { container: this.container, pool: this.pool };
     }
@@ -39,9 +39,9 @@ export class TestDatabaseContainer {
     }
 
     return { container: this.container, pool: this.pool };
-  };
+  }
 
-  stop = async () => {
+  async stop() {
     if (this.pool) {
       await this.pool.end();
       this.pool = null;
@@ -50,18 +50,18 @@ export class TestDatabaseContainer {
       await this.container.stop();
       this.container = null;
     }
-  };
+  }
 
-  getPool = () => {
+  getPool() {
     if (!this.pool) {
       throw new Error(
         `Test Pool not initialized. Make sure testContainer is started in GlobalSetup.ts.`,
       );
     }
     return this.pool;
-  };
+  }
 
-  reset = async () => {
+  async reset() {
     if (!this.pool) {
       throw new Error('Test pool not initialized...');
     }
@@ -83,5 +83,5 @@ export class TestDatabaseContainer {
       logger.error(`Failed to reset test database: ${err}`);
       throw err;
     }
-  };
+  }
 }

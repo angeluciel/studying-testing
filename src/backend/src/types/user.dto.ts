@@ -8,7 +8,8 @@ export const createUserSchema = z.object({
       error: (issue) => (issue.input === undefined ? 'Email is required.' : 'Invalid input.'),
     })
     .min(1, { error: 'Email is required.' })
-    .pipe(z.email({ error: 'Invalid email.' })),
+    .pipe(z.email({ error: 'Invalid email.' }))
+    .transform((val) => val.toLowerCase().trim()),
   name: z
     .string({
       error: (issue) => (issue.input === undefined ? 'Name is missing.' : 'Invalid name.'),

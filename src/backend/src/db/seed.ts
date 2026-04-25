@@ -1,8 +1,5 @@
-import { NextFunction } from 'express';
-import { pool, DrizzleDb } from './pool';
+import type { DrizzleDb } from './pool';
 import { env } from '../config/env';
-import { UserRow } from '../types/user';
-import { userService } from '../container';
 import { usersTable } from './schema';
 import { eq } from 'drizzle-orm';
 import { hashPassword } from '@/utils/password';

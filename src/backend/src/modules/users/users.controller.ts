@@ -17,6 +17,7 @@ export class UserController {
       next(err);
     }
   };
+
   getMe = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const user = await this.userService.getMe(req.user!.id);
@@ -25,6 +26,7 @@ export class UserController {
       next(err);
     }
   };
+
   updateMe = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const body = updateMeSchema.parse(req.body);
@@ -34,6 +36,7 @@ export class UserController {
       next(err);
     }
   };
+
   deleteUser = async (req: Request<{ id: string }>, res: Response, next: NextFunction) => {
     try {
       const targetUserId = req.params.id;

@@ -13,6 +13,7 @@ vi.mock('../../utils/mail', () => ({
 vi.mock('../db', () => ({
   pool: { query: vi.fn() },
 }));
+
 const auth = new Auth(Db);
 
 describe('GET /health', () => {
@@ -24,9 +25,6 @@ describe('GET /health', () => {
   });
 });
 
-/**
- * Either fail because user is unathorized or pass with authorization
- */
 describe('GET /users/me', () => {
   it('returns 401 unauthorized', async () => {
     const response = await request(app).get('/users/me');
@@ -64,14 +62,6 @@ describe('GET /users/me', () => {
   });
 });
 
-/**
- * Validate:
- *  if duplicate email, should error and return that
- *  if email invalid, should error and return invalid
- *  if weak password, should error and return weak password
- *  if email valid, should succeed and return user data
- *
- */
 describe('POST /users', () => {
   it('returns 201 and creates a user with normalized email', async () => {
     const response = await request(app).post('/users').send({

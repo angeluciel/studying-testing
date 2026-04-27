@@ -28,7 +28,7 @@ export class AuthRepository {
     const result = await this.db.insert(passwordChangeTokensTable).values({
       user_id: userId,
       token_hash: tokenHash,
-      expires_at: sql`now() = interval '30 minutes'`,
+      expires_at: sql`now() + interval '30 minutes'`,
     });
 
     return result.rows[0] ?? null;

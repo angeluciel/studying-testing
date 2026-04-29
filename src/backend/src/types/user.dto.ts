@@ -1,5 +1,8 @@
 import z from 'zod';
-import { UserRow } from './user';
+
+import type { UserRow } from './user';
+
+import type { passwordChangeTokensTable } from '@/db/schema';
 
 // --- Schemas ---
 export const createUserSchema = z.object({
@@ -48,7 +51,7 @@ export type CreateuserDto = z.infer<typeof createUserSchema>;
 export type UpdateMeDto = z.infer<typeof updateMeSchema>;
 
 // --- Resposne Types
-export type UserResponseDto = {
+export interface UserResponseDto {
   id: string;
   email: string;
   name: string;
@@ -57,7 +60,7 @@ export type UserResponseDto = {
   emailConfirmed: boolean;
   isActive: boolean;
   createdAt: string;
-};
+}
 
 export function toUserResponse(row: UserRow): UserResponseDto {
   return {
@@ -71,3 +74,5 @@ export function toUserResponse(row: UserRow): UserResponseDto {
     createdAt: row.created_at.toISOString(),
   };
 }
+
+export type ChangePassword = Pick<typeof passwordChangeTokensTable.$inferInsert, 'id' | 'user_id'>;

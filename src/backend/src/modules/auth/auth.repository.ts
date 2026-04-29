@@ -1,40 +1,30 @@
-import { passwordChangeTokensTable, usersTable } from '@/db/schema';
-import { DrizzleDb } from '@/db/pool';
 import { eq, sql, isNull, and, gt } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+
+import type { DrizzleDb } from '@/db/pool';
+import { passwordChangeTokensTable, usersTable } from '@/db/schema';
+import type { ChangePassword } from '@/types/user.dto';
 
 export class AuthRepository {
   constructor(private readonly db: DrizzleDb) {}
 
   // PWD = Password
   // Tk  = Token
-  async findByEmail(email: string) {
-    const result = await this.db
-      .select({
-        id: usersTable.id,
-        name: usersTable.name,
-        email: usersTable.email,
-        password_hash: usersTable.password_hash,
-        role: usersTable.role,
-        is_active: usersTable.is_active,
-      })
-      .from(usersTable)
-      .where(eq(usersTable.email, email));
+  async findByEmail(email: string): Promise<typeof usersTable.$inferSelect | null> {
+    const result = await this.db.select().from(usersTable).where(eq(usersTable.email, email));
 
     return result[0] ?? null;
   }
 
-  async insertPwdChangeTk(userId: string, tokenHash: string) {
-    const result = await this.db.insert(passwordChangeTokensTable).values({
+  async insertPwdChangeTk(userId: string, tokenHash: string): Promise<void> {
+    await this.db.insert(passwordChangeTokensTable).values({
       user_id: userId,
       token_hash: tokenHash,
-      expires_at: sql`now() = interval '30 minutes'`,
+      expires_at: sql`now() + interval '30 minutes'`,
     });
-
-    return result.rows[0] ?? null;
   }
 
-  async findPwdChangeTkByHash(tokenHash: string) {
+  async findPwdChangeTkByHash(tokenHash: string): Promise<ChangePassword | null> {
     const pct = alias(passwordChangeTokensTable, 'pct');
     const result = await this.db
       .select({ id: pct.id, user_id: pct.user_id })

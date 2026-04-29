@@ -1,24 +1,26 @@
-import { hashPassword } from '@/utils/password';
-import { sendMailWithTemplate } from '@/utils/mail';
-import { WelcomeEmail } from '@/emails/WelcomeEmail';
-import { env } from '@/config/env';
-import { UpdateUserInput, UserRow } from '@/types/user';
-import { AppError } from '@/middlewares/error.middleware';
-import { UserRepository } from './users.repository';
 import { DatabaseError } from 'pg';
 
-export type CreateUserInput = {
+import type { UserRepository } from './users.repository';
+
+import { env } from '@/config/env';
+import { WelcomeEmail } from '@/emails/WelcomeEmail';
+import { AppError } from '@/middlewares/error.middleware';
+import type { UpdateUserInput, UserRow } from '@/types/user';
+import { sendMailWithTemplate } from '@/utils/mail';
+import { hashPassword } from '@/utils/password';
+
+export interface CreateUserInput {
   email: string;
   name: string;
   surname: string;
   password: string;
   role?: 'admin' | 'user';
-};
+}
 
 export class UserService {
   constructor(private readonly userRepo: UserRepository) {}
 
-  async createUser(input: CreateUserInput) {
+  async createUser(input: CreateUserInput): Promise<UserRow | undefined> {
     const passwordHash = await hashPassword(input.password);
 
     try {
@@ -51,19 +53,19 @@ export class UserService {
     }
   }
 
-  async getMe(userId: string) {
+  async getMe(userId: string): Promise<UserRow> {
     const user = await this.userRepo.findById(userId);
     if (!user) throw new AppError(404, 'User not found.');
     return user;
   }
 
-  async updateMe(userId: string, data: UpdateUserInput) {
+  async updateMe(userId: string, data: UpdateUserInput): Promise<UserRow> {
     const user = await this.userRepo.update(userId, data);
     if (!user) throw new AppError(404, 'User not found.');
 
     return user;
   }
-  async deleteUser(userId: string) {
+  async deleteUser(userId: string): Promise<void> {
     await this.userRepo.delete(userId);
   }
 }

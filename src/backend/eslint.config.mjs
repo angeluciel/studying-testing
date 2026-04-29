@@ -1,6 +1,6 @@
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import importPlugin from 'eslint-plugin-import';
+import importX from 'eslint-plugin-import-x';
 import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
@@ -17,7 +17,7 @@ export default tseslint.config(
     },
 
     plugins: {
-      import: importPlugin,
+      import: importX,
     },
 
     rules: {
@@ -37,7 +37,7 @@ export default tseslint.config(
       'import/order': [
         'error',
         {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'type'],
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
           'newlines-between': 'always',
           alphabetize: { order: 'asc', caseInsensitive: true },
         },
@@ -53,6 +53,10 @@ export default tseslint.config(
           project: './tsconfig.json',
         },
         node: true,
+      },
+      'import/extensions': ['.ts', '.js'],
+      'import/parsers': {
+        '@typescript-eslint/parser': ['.ts'],
       },
     },
   },

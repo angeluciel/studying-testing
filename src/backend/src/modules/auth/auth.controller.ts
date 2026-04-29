@@ -1,13 +1,17 @@
-import { NextFunction, Request, Response } from 'express';
-import { z } from 'zod';
-import * as authService from './auth.service';
+import type { NextFunction, Request, Response } from 'express';
+
+import type { AuthService } from './auth.service';
+
 import { loginSchema, requestPasswordChangeSchema, changePasswordSchema } from '@/types/auth.dto';
-import { AuthService } from './auth.service';
 
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  login = async (req: Request, res: Response, next: NextFunction) => {
+  login = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response | undefined> => {
     try {
       const body = loginSchema.parse(req.body);
       const result = await this.authService.login(body.email, body.password);
@@ -16,7 +20,11 @@ export class AuthController {
       next(err);
     }
   };
-  requestPwdChange = async (req: Request, res: Response, next: NextFunction) => {
+  requestPwdChange = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response | undefined> => {
     try {
       const body = requestPasswordChangeSchema.parse(req.body);
       await this.authService.requestPwdChange(body.email);
@@ -25,7 +33,11 @@ export class AuthController {
       next(err);
     }
   };
-  changePwd = async (req: Request, res: Response, next: NextFunction) => {
+  changePwd = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<Response | undefined> => {
     try {
       const body = changePasswordSchema.parse(req.body);
       await this.authService.changePassword(body.token, body.newPassword);

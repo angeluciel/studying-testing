@@ -1,17 +1,17 @@
-import { pool } from '../../db/pool';
-import { comparePassword, hashPassword } from '../../utils/password';
-import { signAccessToken } from '../../utils/jwt';
-import { generateRawToken, hashToken } from '../../utils/tokens';
-import { sendMailWithTemplate } from '../../utils/mail';
-import { PasswordResetEmail } from '../../emails/PasswordResetEmail';
-import { env } from '../../config/env';
-import { AppError } from '../../middlewares/error.middleware';
-import { AuthRepository } from './auth.repository';
+import type { AuthRepository } from './auth.repository';
+
+import { env } from '@/config/env';
+import { PasswordResetEmail } from '@/emails/PasswordResetEmail';
+import { AppError } from '@/middlewares/error.middleware';
+import { signAccessToken } from '@/utils/jwt';
+import { sendMailWithTemplate } from '@/utils/mail';
+import { comparePassword, hashPassword } from '@/utils/password';
+import { generateRawToken, hashToken } from '@/utils/tokens';
 
 export class AuthService {
   constructor(private readonly authRepository: AuthRepository) {}
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string): Promise<{ accessToken: string }> {
     const user = await this.authRepository.findByEmail(email);
 
     if (!user) throw new AppError(401, 'Invalid credentials.');
@@ -27,7 +27,7 @@ export class AuthService {
     });
     return { accessToken };
   }
-  async requestPwdChange(email: string) {
+  async requestPwdChange(email: string): Promise<void> {
     const user = await this.authRepository.findByEmail(email);
 
     if (!user) return;
@@ -43,7 +43,7 @@ export class AuthService {
       PasswordResetEmail({ name: user.name, resetLink }),
     );
   }
-  async changePassword(token: string, newPassword: string) {
+  async changePassword(token: string, newPassword: string): Promise<void> {
     const tokenHash = hashToken(token);
     const row = await this.authRepository.findPwdChangeTkByHash(tokenHash);
 

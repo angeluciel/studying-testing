@@ -1,10 +1,11 @@
-import { DrizzleDb } from '@/db/pool';
 import { sql } from 'drizzle-orm';
+
+import type { DrizzleDb } from '@/db/pool';
 
 export class TestDatabase {
   constructor(private readonly db: DrizzleDb) {}
 
-  resetDatabase = async () => {
+  resetDatabase = async (): Promise<void> => {
     await this.db.execute(sql`
         DO $$
         DECLARE

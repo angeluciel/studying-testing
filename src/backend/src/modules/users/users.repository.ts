@@ -1,7 +1,8 @@
-import { usersTable } from './../../db/schema';
-import { UserRow, CreateUserInput, UpdateUserInput } from '@/types/user';
-import { DrizzleDb } from '@/db/pool';
 import { eq, sql } from 'drizzle-orm';
+
+import type { DrizzleDb } from '@/db/pool';
+import { usersTable } from '@/db/schema';
+import type { UserRow, CreateUserInput, UpdateUserInput } from '@/types/user';
 
 export class UserRepository {
   constructor(private readonly db: DrizzleDb) {}

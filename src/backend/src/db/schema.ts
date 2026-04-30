@@ -1,7 +1,7 @@
-import { pgTable, text, pgEnum, uniqueIndex, timestamp, boolean } from 'drizzle-orm/pg-core';
-import generateNanoId from '@/utils/idGen';
+import { pgTable, text, pgEnum, timestamp, boolean, uuid } from 'drizzle-orm/pg-core';
+
 import { timestamps } from '@/utils/columns.helper';
-import { uuid } from 'drizzle-orm/pg-core';
+import generateNanoId from '@/utils/idGen';
 
 const rolesEnum = pgEnum('role', ['user', 'admin']);
 

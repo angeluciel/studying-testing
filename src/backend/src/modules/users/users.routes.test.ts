@@ -1,11 +1,12 @@
 import request from 'supertest';
 import { describe, it, expect, vi } from 'vitest';
+
 import { app } from '@/app';
-import { Auth } from '@/tests/helpers/auth';
-import { sendMailWithTemplate } from '@/utils/mail';
-import { UserRow } from '@/types/user';
-import { AppError } from '@/middlewares/error.middleware';
 import { Db, pool } from '@/db/pool';
+import { AppError } from '@/middlewares/error.middleware';
+import { Auth } from '@/tests/helpers/auth';
+import type { UserRow } from '@/types/user';
+import { sendMailWithTemplate } from '@/utils/mail';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),

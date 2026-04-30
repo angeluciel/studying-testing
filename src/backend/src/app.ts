@@ -1,8 +1,9 @@
 import express from 'express';
 import pinoHttp from 'pino-http';
+
+import { errorMiddleware } from './middlewares/error.middleware';
 import { authRouter } from './modules/auth/auth.routes';
 import { usersRouter } from './modules/users/users.routes';
-import { errorMiddleware } from './middlewares/error.middleware';
 import { logger } from './utils/logger';
 
 export const app = express();

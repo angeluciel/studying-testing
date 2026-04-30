@@ -1,12 +1,16 @@
-import type { DrizzleDb } from './pool';
-import { env } from '../config/env';
-import { usersTable } from './schema';
 import { eq } from 'drizzle-orm';
+
+import { env } from '../config/env';
+
+import type { DrizzleDb } from './pool';
+import { usersTable } from './schema';
+
 import { hashPassword } from '@/utils/password';
 
 export class SeedUtils {
   constructor(private readonly db: DrizzleDb) {}
 
+  //TODO: type the return
   seedUser = async (mockEmail: string, role: 'admin' | 'user') => {
     const existing = await this.db.select().from(usersTable).where(eq(usersTable.email, mockEmail));
 

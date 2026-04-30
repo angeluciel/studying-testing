@@ -1,6 +1,6 @@
+import { beforeEach, afterAll, inject } from 'vitest';
+
 import { TestDatabase } from '@/db/resetDatabase.js';
-import { beforeEach, afterAll } from 'vitest';
-import { inject } from 'vitest';
 
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = inject('DATABASE_URL');

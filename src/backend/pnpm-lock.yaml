@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@globalart/oxide':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -667,6 +670,9 @@ packages:
   '@eslint/plugin-kit@0.7.1':
     resolution: {integrity: sha512-rZAP3aVgB9ds9KOeUSL+zZ21hPmo8dh6fnIFwRQj5EAZl9gzR7wxYbYXYysAM8CTqGmUGyp2S4kUdV17MnGuWQ==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@globalart/oxide@1.0.1':
+    resolution: {integrity: sha512-Rs0tMakRdhRbCmzjx+asPPlfH8yMj6WKOPSlE6y5lOb6yXnwDNsJ45+Tze0m4HYPELHP4jfKuPl4DEKk5waoEg==}
 
   '@grpc/grpc-js@1.14.3':
     resolution: {integrity: sha512-Iq8QQQ/7X3Sac15oB6p0FmUg/klxQvXLeileoqrTRGJYLV+/9tubbr9ipz0GKHjmXVsgFPo/+W+2cA8eNcR+XA==}
@@ -3954,6 +3960,8 @@ snapshots:
     dependencies:
       '@eslint/core': 1.2.1
       levn: 0.4.1
+
+  '@globalart/oxide@1.0.1': {}
 
   '@grpc/grpc-js@1.14.3':
     dependencies:

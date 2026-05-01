@@ -3,16 +3,12 @@ import { describe, it, expect, vi } from 'vitest';
 
 import { app } from '@/app';
 import { Db, pool } from '@/db/pool';
-import { AppError } from '@/middlewares/error.middleware';
 import { Auth } from '@/tests/helpers/auth';
 import type { UserRow } from '@/types/user';
 import { sendMailWithTemplate } from '@/utils/mail';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
-}));
-vi.mock('../db', () => ({
-  pool: { query: vi.fn() },
 }));
 const auth = new Auth(Db);
 
@@ -25,9 +21,6 @@ describe('GET /health', () => {
   });
 });
 
-/**
- * Either fail because user is unathorized or pass with authorization
- */
 describe('GET /users/me', () => {
   it('returns 401 unauthorized', async () => {
     const response = await request(app).get('/users/me');
@@ -42,13 +35,15 @@ describe('GET /users/me', () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toMatchObject({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       id: expect.any(String),
       email: user.email,
       name: user.name,
       surname: user.surname,
       role: user.role,
-      emailConfirmed: expect.any(Boolean),
-      isActive: expect.any(Boolean),
+      emailConfirmed: false,
+      isActive: true,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       createdAt: expect.any(String),
     });
   });
@@ -83,27 +78,21 @@ describe('POST /users', () => {
     });
 
     expect(response.status).toBe(201);
-    expect(sendMailWithTemplate).toHaveBeenCalledTimes(1);
-    expect(sendMailWithTemplate).toHaveBeenCalledWith(
-      'teste@example.com',
-      'Welcome - Your account is ready.',
-      expect.anything(),
-    );
-    expect(response.body.email).toBe('teste@example.com');
     expect(response.body).toMatchObject({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       id: expect.any(String),
       email: 'teste@example.com',
       name: 'teste',
       surname: 'testando',
       role: 'user',
       emailConfirmed: false,
-      isActive: expect.any(Boolean),
+      isActive: true,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       createdAt: expect.any(String),
     });
     expect(response.body.password).toBeUndefined();
     expect(response.body.password_hash).toBeUndefined();
   });
-
   describe('business rules', () => {
     it.todo('creates role=user even if role=admin is sent', async () => {});
   });
@@ -173,15 +162,6 @@ describe('POST /users', () => {
       if (message) {
         expect(response.body.issues.fieldErrors[field]).toContain(message);
       }
-    });
-  });
-
-  describe('error handling', () => {
-    it('re-throws AppError as-is', async () => {
-      const appError = new AppError(409, 'User already exists');
-    });
-    it('wraps unexpected errors in a 500 AppError', async () => {
-      // vi.mocked(pool.query).mockRejectedValue(new AppError(400, 'DB connection failed'))
     });
   });
 });

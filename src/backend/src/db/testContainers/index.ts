@@ -1,21 +1,15 @@
-import { startPostgresContainer, stopPostgresContainer } from "./postgres";
-import { startMailpitContainer, stopMailpitContainer } from "./mailpit";
+import { TestDatabaseContainer } from './postgres';
+import { MailpitContainer } from './mailpit';
 
-export async function startTestInfrastructure() {
-    const [postgres, mailpit] = await Promise.all([
-        startPostgresContainer(),
-        startMailpitContainer(),
-    ]);
+export class TestingInfrastructure {
+  private testPg = new TestDatabaseContainer();
+  private testMail = new MailpitContainer();
 
+  start = async () => {
+    const [postgres, mailpit] = await Promise.all([this.testPg.start(), this.testMail.start()]);
     return { postgres, mailpit };
+  };
+  stop = async () => {
+    await Promise.all([this.testPg.stop(), this.testMail.stop()]);
+  };
 }
-
-export async function stopTestInfrastructure(): Promise<void> {
-    await Promise.all([
-        stopPostgresContainer(),
-        stopMailpitContainer(),
-    ]);
-}
-
-export { startPostgresContainer, stopPostgresContainer, getTestPool, resetTestDatabase } from "./postgres";
-export { startMailpitContainer, stopMailpitContainer } from "./mailpit";

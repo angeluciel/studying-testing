@@ -4,15 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
+    "dev": "tsx watch --tsconfig tsconfig.json src/server.ts",
+    "build": "tsc && tsc-alias",
+    "start": "node -r tsconfig-paths/register dist/server.js",
     "test": "cross-env NODE_ENV=test vitest run",
     "test:watch": "cross-env NODE_ENV=test vitest",
     "test:coverage": "cross-env NODE_ENV=test vitest run --coverage",
-    "seed": "tsx src/db/seed-runner.ts",
-    "migrate": "NODE_ENV=development tsx src/db/migrate.ts",
-    "migrate:test": "cross-env NODE_ENV=test tsx src/db/migrate.ts"
+    "seed": "tsx --tsconfig tsconfig.json src/db/seed-runner.ts",
+    "migrate": "NODE_ENV=development tsx --tsconfig tsconfig.json src/db/migrate.ts",
+    "migrate:test": "cross-env NODE_ENV=test tsx --tsconfig tsconfig.json src/db/migrate.ts"
   },
   "keywords": [],
   "author": "",
@@ -22,8 +22,10 @@
     "@react-email/components": "^1.0.12",
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.1",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "nanoid": "^5.1.9",
     "nodemailer": "^8.0.5",
     "pg": "^8.20.0",
     "pino": "^10.3.1",
@@ -34,6 +36,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@testcontainers/postgresql": "^11.14.0",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
@@ -46,11 +49,19 @@
     "@types/supertest": "^7.2.0",
     "@vitest/coverage-v8": "4.1.4",
     "cross-env": "^10.1.0",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^10.2.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.2",
     "prettier": "^3.8.3",
     "supertest": "^7.2.2",
     "testcontainers": "^11.14.0",
+    "tsc-alias": "^1.8.16",
+    "tsconfig-paths": "^4.2.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
+    "typescript-eslint": "^8.59.1",
     "vitest": "^4.1.4"
   }
 }

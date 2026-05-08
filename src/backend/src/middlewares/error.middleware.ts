@@ -25,6 +25,10 @@ export function errorMiddleware(
         return res.status(err.statusCode).json({ message: err.message });
     }
 
+    if (err instanceof Error && (err as NodeJS.ErrnoException & { code?: string }).code === '23505') {
+        return res.status(409).json({ message: "Resource already exists." });
+    }
+
     logger.error(err);
     return res.status(500).json({ message: "Internal server error" });
 }

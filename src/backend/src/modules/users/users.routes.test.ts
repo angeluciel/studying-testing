@@ -1,21 +1,20 @@
 import request from 'supertest';
 import { describe, it, expect, vi } from 'vitest';
-import { app } from '../../app';
-import { createAuthenticatedUser } from '../../tests/helpers/auth';
-import { sendMailWithTemplate } from '../../utils/mail';
-import { createUser } from './users.service';
-import { Body } from '@react-email/components';
-import * as usersService from './users.service';
-import { signAccessToken } from '../../utils/jwt';
-import { UserRow } from '../../types/user';
+
+import { app } from '@/app';
+import { Db, pool } from '@/db/pool';
+import { AppError } from '@/middlewares/error.middleware';
+import { Auth } from '@/tests/helpers/auth';
+import type { UserRow } from '@/types/user';
+import { sendMailWithTemplate } from '@/utils/mail';
 
 vi.mock('../../utils/mail', () => ({
   sendMailWithTemplate: vi.fn(),
 }));
-
-vi.mock('./users-service', () => ({
-  getMe: vi.fn(),
+vi.mock('../db', () => ({
+  pool: { query: vi.fn() },
 }));
+const auth = new Auth(Db);
 
 describe('GET /health', () => {
   it('returns 200 with ok: true', async () => {
@@ -38,7 +37,7 @@ describe('GET /users/me', () => {
 
   it('returns 200 with authenticated user data', async () => {
     // seed test db
-    const { user, token } = await createAuthenticatedUser('admin');
+    const { user, token } = await auth.createUser('admin');
     const response = await request(app).get('/users/me').auth(token, { type: 'bearer' });
 
     expect(response.status).toBe(200);
@@ -48,26 +47,21 @@ describe('GET /users/me', () => {
       name: user.name,
       surname: user.surname,
       role: user.role,
-      email_confirmed: expect.any(Boolean),
-      is_active: expect.any(Boolean),
-      created_at: expect.any(String),
+      emailConfirmed: expect.any(Boolean),
+      isActive: expect.any(Boolean),
+      createdAt: expect.any(String),
     });
   });
 
   it('returns 404 if user no longer exists', async () => {
-    const spy = vi.spyOn(usersService, 'getMe').mockResolvedValue(null);
-    const token = signAccessToken({
-      sub: 'deleted-user-id',
-      role: 'user',
-      email: 'deleted@example.com',
-    });
+    const { user, token } = await auth.createUser('user');
 
-    const response = await request(app).get('/users/me').auth(token, { type: `bearer` });
+    await pool.query('DELETE FROM users WHERE id = $1', [user.id]);
+
+    const response = await request(app).get('/users/me').auth(token, { type: 'bearer' });
 
     expect(response.status).toBe(404);
-    expect(response.body).toMatchObject({ message: 'User not found' });
-
-    spy.mockRestore();
+    expect(response.body).toMatchObject({ message: 'User not found.' });
   });
 });
 
@@ -92,7 +86,7 @@ describe('POST /users', () => {
     expect(sendMailWithTemplate).toHaveBeenCalledTimes(1);
     expect(sendMailWithTemplate).toHaveBeenCalledWith(
       'teste@example.com',
-      'Welcome — your account is ready',
+      'Welcome - Your account is ready.',
       expect.anything(),
     );
     expect(response.body.email).toBe('teste@example.com');
@@ -102,9 +96,9 @@ describe('POST /users', () => {
       name: 'teste',
       surname: 'testando',
       role: 'user',
-      email_confirmed: false,
-      is_active: expect.any(Boolean),
-      created_at: expect.any(String),
+      emailConfirmed: false,
+      isActive: expect.any(Boolean),
+      createdAt: expect.any(String),
     });
     expect(response.body.password).toBeUndefined();
     expect(response.body.password_hash).toBeUndefined();
@@ -114,20 +108,21 @@ describe('POST /users', () => {
     it.todo('creates role=user even if role=admin is sent', async () => {});
   });
 
-  // TEST EMAIL
   describe('email validation', () => {
     it('returns 409 if email already exists', async () => {
-      await createUser({
-        email: 'test@example.com',
+      const emailToBeTested = 'single@email.com';
+
+      await request(app).post('/users').send({
+        email: emailToBeTested,
         name: 'first',
         surname: 'user',
         password: '1234567890abcdefghijklmnopqrstuvwxyz',
       });
 
-      vi.clearAllMocks();
+      vi.mocked(sendMailWithTemplate).mockClear();
 
       const response = await request(app).post('/users').send({
-        email: 'test@example.com',
+        email: emailToBeTested,
         name: 'second',
         surname: 'user',
         password: '1234567890abcdefghijklmnopqrstuvwxyz',
@@ -182,8 +177,12 @@ describe('POST /users', () => {
   });
 
   describe('error handling', () => {
-    it('re-throws AppError as-is', async () => {});
-    it('wraps unexpected errors in a 500 AppError', async () => {});
+    it('re-throws AppError as-is', async () => {
+      const appError = new AppError(409, 'User already exists');
+    });
+    it('wraps unexpected errors in a 500 AppError', async () => {
+      // vi.mocked(pool.query).mockRejectedValue(new AppError(400, 'DB connection failed'))
+    });
   });
 });
 
@@ -211,28 +210,30 @@ describe('PATCH /users/me', async () => {
     });
   });
 
-  let user: UserRow;
-  beforeAll(async () => {
-    ({ user } = await createAuthenticatedUser('user'));
-    return user;
+  describe('data validation', () => {
+    let user: UserRow;
+    beforeAll(async () => {
+      ({ user } = await auth.createUser('user'));
+      return user;
+    });
+
+    it.each([['blank name'], ['blank surname'], ['both blank'], ['both missing']])(
+      'returns 400 when %s',
+      async (scenario) => {
+        const bodies: Record<string, object> = {
+          'blank name': { name: '', surname: 'x' },
+          'blank surname': { name: 'x', surname: '' },
+          'both blank': { name: '', surname: '' },
+          'both missing': {},
+        };
+        const { token } = await auth.createUser('user');
+        const result = await request(app)
+          .patch('/users/me')
+          .send(bodies[scenario])
+          .auth(token, { type: 'bearer' });
+
+        expect(result.status).toBe(400);
+      },
+    );
   });
-
-  it.each([['blank name'], ['blank surname'], ['both blank'], ['both missing']])(
-    'returns 400 when %s',
-    async (scenario) => {
-      const bodies: Record<string, object> = {
-        'blank name': { name: '', surname: 'x' },
-        'blank surname': { name: 'x', surname: '' },
-        'both blank': { name: '', surname: '' },
-        'both missing': {},
-      };
-      const { token } = await createAuthenticatedUser('user');
-      const result = await request(app)
-        .patch('/users/me')
-        .send(bodies[scenario])
-        .auth(token, { type: 'bearer' });
-
-      expect(result.status).toBe(400);
-    },
-  );
 });
